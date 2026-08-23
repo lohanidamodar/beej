@@ -1,0 +1,116 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+{{#picons}}
+import 'package:picons/picons.dart';
+{{/picons}}
+
+import '../../core/config/app_config.dart';
+import '../../core/router/navigation.dart';
+import '../../core/router/routes.dart';
+import '../../core/ui/feedback.dart';
+import '../../core/util/launcher.dart';
+import '../../l10n/app_localizations.dart';
+{{#appwrite}}
+import '../auth/auth_controller.dart';
+{{/appwrite}}
+import 'widgets/accent_tile.dart';
+import 'widgets/language_tile.dart';
+import 'widgets/text_scale_tile.dart';
+import 'widgets/theme_mode_tile.dart';
+
+/// A titled group of rows on the Settings screen.
+class SettingsSection {
+  const SettingsSection({required this.title, required this.tiles});
+
+  final String title;
+  final List<Widget> tiles;
+}
+
+/// The Settings screen's content, assembled here rather than inline in the
+/// screen.
+///
+/// This is the seam a feature extends: a brick that adds a settings row adds a
+/// section here instead of editing the screen's build method, so two features
+/// can be added without touching the same lines.
+List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context);
+
+  return [
+    SettingsSection(
+      title: l10n.settingsAppearance,
+      tiles: const [AccentTile(), ThemeModeTile(), TextScaleTile()],
+    ),
+    SettingsSection(
+      title: l10n.settingsGeneral,
+      tiles: const [LanguageTile()],
+    ),
+{{#appwrite}}
+    SettingsSection(
+      title: l10n.authAccount,
+      tiles: [
+        ListTile(
+          leading: const Icon({{iconAccount}}),
+          title: Text(ref.watch(currentUserProvider)?.email ?? l10n.authAccount),
+        ),
+        ListTile(
+          leading: const Icon({{iconSignOut}}),
+          title: Text(l10n.authSignOut),
+          onTap: () async {
+            final confirmed = await context.confirm(
+              title: l10n.authSignOutConfirm,
+              confirmLabel: l10n.authSignOut,
+              isDestructive: true,
+            );
+            if (confirmed) await ref.read(authControllerProvider.notifier).signOut();
+          },
+        ),
+      ],
+    ),
+{{/appwrite}}
+    SettingsSection(
+      title: l10n.settingsAbout,
+      tiles: [
+        ListTile(
+          leading: const Icon({{iconAbout}}),
+          title: Text(l10n.aboutTitle),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.pushTo(Routes.about),
+        ),
+        ListTile(
+          leading: const Icon({{iconShare}}),
+          title: Text(l10n.aboutShare),
+          subtitle: Text(l10n.aboutShareSubtitle),
+          onTap: () => Launcher.shareApp(l10n.aboutShareMessage),
+        ),
+        ListTile(
+          leading: const Icon({{iconRate}}),
+          title: Text(l10n.aboutRate),
+          subtitle: Text(l10n.aboutRateSubtitle),
+          onTap: () => Launcher.openStoreListing(),
+        ),
+        ListTile(
+          leading: const Icon({{iconMoreApps}}),
+          title: Text(l10n.aboutMoreApps),
+          subtitle: Text(l10n.aboutMoreAppsSubtitle),
+          onTap: () => _open(context, AppConfig.moreAppsUrl),
+        ),
+        ListTile(
+          leading: const Icon({{iconSupport}}),
+          title: Text(l10n.aboutSupport),
+          subtitle: Text(l10n.aboutSupportSubtitle),
+          onTap: () => Launcher.emailSupport(subject: l10n.aboutSupportSubject),
+        ),
+      ],
+    ),
+  ];
+}
+
+Future<void> _open(BuildContext context, String url) async {
+  final opened = await Launcher.openUrl(url);
+  if (!opened && context.mounted) {
+    context.toast(
+      AppLocalizations.of(context).errorCouldNotOpen(url),
+      isError: true,
+    );
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "{{appName}}",
+  "@appTitle": {
+    "description": "The app name, shown in the title bar and the About screen"
+  },
+
+{{#tabs}}
+  "{{l10nKey}}": "{{label}}",
+{{/tabs}}
+  "navSettings": "Settings",
+
+  "actionRetry": "Retry",
+  "actionCancel": "Cancel",
+  "actionConfirm": "Confirm",
+  "actionOk": "OK",
+  "actionClose": "Close",
+
+  "comingSoon": "Nothing here yet",
+  "comingSoonBody": "This screen is a placeholder. Replace it with the real thing.",
+
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsGeneral": "General",
+  "settingsAbout": "About",
+
+  "settingsAccent": "Accent colour",
+  "settingsThemeMode": "Theme",
+  "themeSystem": "Match device",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+
+  "settingsLanguage": "Language",
+  "languageSystem": "Match device",
+  "languageEnglish": "English",
+  "languageNepali": "Nepali",
+
+  "settingsTextSize": "Text size",
+  "textSizeSmall": "Small",
+  "textSizeDefault": "Default",
+  "textSizeLarge": "Large",
+  "textSizeLarger": "Larger",
+
+  "accentIndigo": "Indigo",
+  "accentTeal": "Teal",
+  "accentForest": "Forest",
+  "accentAmber": "Amber",
+  "accentCoral": "Coral",
+  "accentRose": "Rose",
+  "accentMauve": "Mauve",
+  "accentSlate": "Slate",
+
+  "aboutTitle": "About",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": { "type": "String", "example": "1.0.0+1" }
+    }
+  },
+
+  "aboutPrivacyPolicy": "Privacy policy",
+  "aboutPrivacyPolicySubtitle": "What we collect, and what we don't",
+  "aboutLicenses": "Open-source licences",
+  "aboutLicensesSubtitle": "Third-party packages this app uses",
+
+  "aboutShare": "Share {{appName}}",
+  "aboutShareSubtitle": "Tell someone who'd find it useful",
+  "aboutShareMessage": "I've been using {{appName}} — you might like it too.",
+
+  "aboutRate": "Rate {{appName}}",
+  "aboutRateSubtitle": "A rating genuinely helps",
+
+  "aboutMoreApps": "More from PopupBits",
+  "aboutMoreAppsSubtitle": "Other things we build",
+
+  "aboutSupport": "Contact support",
+  "aboutSupportSubtitle": "{{supportEmail}}",
+  "aboutSupportSubject": "{{appName}} support",
+
+  "errorCouldNotOpen": "Couldn't open {target}",
+  "@errorCouldNotOpen": {
+    "placeholders": {
+      "target": { "type": "String", "example": "https://popupbits.com" }
+    }
+  },
+{{#inAppUpdate}}
+
+  "updateReadyTitle": "Update downloaded",
+  "updateRestart": "Restart",
+  "updateStuck": "An update is waiting to finish",
+  "updateOpenStore": "Open Play Store",
+{{/inAppUpdate}}
+{{#appwrite}}
+
+  "authSignIn": "Sign in",
+  "authSignUp": "Create account",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authName": "Name",
+  "authForgotPassword": "Forgot password?",
+  "authNoAccount": "No account yet? Create one",
+  "authHaveAccount": "Already have an account? Sign in",
+  "authSignOut": "Sign out",
+  "authSignOutConfirm": "Sign out of {{appName}}?",
+  "authAccount": "Account",
+  "authEmailRequired": "Enter your email",
+  "authEmailInvalid": "That doesn't look like an email address",
+  "authPasswordRequired": "Enter your password",
+  "authPasswordTooShort": "Passwords must be at least 8 characters",
+  "authNameRequired": "Enter your name",
+  "authRecoverySent": "Check your email for a reset link",
+{{/appwrite}}
+
+  "settingsDiagnostics": "Some features didn't start",
+  "settingsDiagnosticsBody": "{count} background service failed to start. The app works, but parts of it may not.",
+  "@settingsDiagnosticsBody": {
+    "placeholders": {
+      "count": { "type": "int", "example": "1" }
+    }
+  }
+}

@@ -1,0 +1,118 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+
+{{#tabs}}
+import '../../features/{{id}}/{{id}}_screen.dart';
+{{/tabs}}
+import '../../features/settings/about_screen.dart';
+import '../../features/settings/settings_screen.dart';
+import '../../features/shell/app_shell.dart';
+{{#appwrite}}
+import '../../features/auth/auth_controller.dart';
+import '../../features/auth/sign_in_screen.dart';
+import '../../features/auth/sign_up_screen.dart';
+import '../ui/views.dart';
+{{/appwrite}}
+import 'routes.dart';
+
+/// Root navigator key. Routes that should cover the shell (full-screen forms,
+/// detail pages) set `parentNavigatorKey: rootNavigatorKey`.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+final routerProvider = Provider<GoRouter>((ref) {
+{{#appwrite}}
+  final refresh = _AuthRefresh(ref);
+  ref.onDispose(refresh.dispose);
+{{/appwrite}}
+
+  return GoRouter(
+    navigatorKey: rootNavigatorKey,
+    initialLocation: Routes.initial,
+{{#appwrite}}
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final auth = ref.read(authControllerProvider);
+      final location = state.matchedLocation;
+
+      // First session load in flight: hold on the splash rather than flashing
+      // a signed-in screen before we know whether the user is signed in.
+      if (auth.isLoading && !auth.hasValue) {
+        return location == Routes.splash ? null : Routes.splash;
+      }
+
+      final signedIn = auth.valueOrNull != null;
+      final onAuthScreen =
+          location == Routes.signIn || location == Routes.signUp;
+
+      if (!signedIn) return onAuthScreen ? null : Routes.signIn;
+      if (onAuthScreen || location == Routes.splash) return Routes.initial;
+      return null;
+    },
+{{/appwrite}}
+    routes: [
+{{#appwrite}}
+      GoRoute(
+        path: Routes.splash,
+        builder: (_, _) => const Scaffold(body: LoadingView()),
+      ),
+      GoRoute(path: Routes.signIn, builder: (_, _) => const SignInScreen()),
+      GoRoute(path: Routes.signUp, builder: (_, _) => const SignUpScreen()),
+{{/appwrite}}
+      StatefulShellRoute.indexedStack(
+        builder: (_, _, shell) => AppShell(navigationShell: shell),
+        branches: [
+{{#tabs}}
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.{{id}},
+                builder: (_, _) => const {{pascalId}}Screen(),
+              ),
+            ],
+          ),
+{{/tabs}}
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.settings,
+                builder: (_, _) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'about',
+                    // Over the shell, not inside it: About is a leaf page, and
+                    // keeping the nav bar under it invites tapping away
+                    // mid-read.
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (_, _) => const AboutScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+});
+{{#appwrite}}
+
+/// Re-runs the router's redirect whenever auth state changes.
+class _AuthRefresh extends ChangeNotifier {
+  _AuthRefresh(this._ref) {
+    _subscription = _ref.listen(
+      authControllerProvider,
+      (_, _) => notifyListeners(),
+    );
+  }
+
+  final Ref _ref;
+  late final ProviderSubscription<Object?> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.close();
+    super.dispose();
+  }
+}
+{{/appwrite}}

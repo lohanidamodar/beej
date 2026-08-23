@@ -1,0 +1,33 @@
+# {{appName}}
+
+{{description}}
+
+Generated with [beej](https://github.com/lohanidamodar/beej).
+
+## Getting started
+
+```sh
+flutter pub get
+flutter run
+```
+
+On Windows, run `flutter` from PowerShell rather than WSL.
+
+## What's in the box
+
+- **Material** via `package:material_ui` (decoupled from the Flutter SDK)
+- **Riverpod 3** for state, no code generation
+- **{{#goRouter}}go_router{{/goRouter}}{{#navigator}}Navigator{{/navigator}}** for routing
+- **Localization** in `lib/l10n/` — {{localeCodes}}
+- **Theming** with a user-selectable accent, theme mode and text size
+{{#appwrite}}
+- **Appwrite** backend wiring with email auth
+{{/appwrite}}
+{{#sqflite}}
+- **sqflite** local database with numbered migrations
+{{/sqflite}}
+{{#fastlane}}
+- **fastlane** lanes for Play and the App Store
+{{/fastlane}}
+
+See [PROJECT.md](PROJECT.md) for the full tour.

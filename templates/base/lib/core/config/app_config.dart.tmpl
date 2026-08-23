@@ -1,0 +1,42 @@
+/// Compile-time configuration.
+///
+/// Values can be overridden per build with `--dart-define`, which is how a
+/// staging build points at a different backend without a code change:
+///
+/// ```sh
+/// flutter build apk --dart-define=APPWRITE_ENDPOINT=https://staging/v1
+/// ```
+abstract final class AppConfig {
+  static const String appName = '{{appName}}';
+
+  /// Android applicationId / iOS bundle id. Must match the Gradle config —
+  /// the store deep link is built from it.
+  static const String androidApplicationId = '{{applicationId}}';
+
+  static const String storeListingUrl =
+      'https://play.google.com/store/apps/details?id={{applicationId}}';
+
+  static const String privacyPolicyUrl = '{{privacyPolicyUrl}}';
+  static const String moreAppsUrl = '{{moreAppsUrl}}';
+  static const String supportEmail = '{{supportEmail}}';
+  static const String legalese = '{{legalese}}';
+{{#appwrite}}
+
+  // --- Appwrite ---
+
+  static const String appwriteEndpoint = String.fromEnvironment(
+    'APPWRITE_ENDPOINT',
+    defaultValue: '{{appwriteEndpoint}}',
+  );
+
+  static const String appwriteProjectId = String.fromEnvironment(
+    'APPWRITE_PROJECT',
+    defaultValue: '{{appwriteProjectId}}',
+  );
+
+  static const String appwriteDatabaseId = String.fromEnvironment(
+    'APPWRITE_DATABASE',
+    defaultValue: '{{appwriteDatabaseId}}',
+  );
+{{/appwrite}}
+}

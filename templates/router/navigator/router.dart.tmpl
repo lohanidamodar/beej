@@ -1,0 +1,70 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../features/settings/about_screen.dart';
+import '../../features/shell/app_shell.dart';
+{{#appwrite}}
+import '../../features/auth/auth_controller.dart';
+import '../../features/auth/sign_in_screen.dart';
+import '../../features/auth/sign_up_screen.dart';
+import '../ui/views.dart';
+{{/appwrite}}
+import 'routes.dart';
+
+/// Root navigator key, so code outside the widget tree (notification taps,
+/// the update flow) can navigate.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// What the app shows first.
+{{#appwrite}}
+///
+/// Gates on auth: the shell only appears once there is a session. With no
+/// router-level redirect available, this widget is the equivalent seam.
+class AppRoot extends ConsumerWidget {
+  const AppRoot({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    return auth.when(
+      loading: () => const Scaffold(body: LoadingView()),
+      error: (_, _) => const SignInScreen(),
+      data: (user) => user == null ? const SignInScreen() : const AppShell(),
+    );
+  }
+}
+{{/appwrite}}
+{{^appwrite}}
+class AppRoot extends StatelessWidget {
+  const AppRoot({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AppShell();
+}
+{{/appwrite}}
+
+/// Named routes pushed over the shell.
+///
+/// Destinations inside the shell are not here: they are branches of the
+/// [AppShell]'s IndexedStack, switched by index rather than by route.
+Route<dynamic>? generateRoute(RouteSettings settings) {
+  return switch (settings.name) {
+    Routes.about => MaterialPageRoute<void>(
+      builder: (_) => const AboutScreen(),
+      settings: settings,
+    ),
+{{#appwrite}}
+    Routes.signIn => MaterialPageRoute<void>(
+      builder: (_) => const SignInScreen(),
+      settings: settings,
+    ),
+    Routes.signUp => MaterialPageRoute<void>(
+      builder: (_) => const SignUpScreen(),
+      settings: settings,
+    ),
+{{/appwrite}}
+    // Unknown route: let Navigator fall through to its own error handling
+    // rather than silently showing the wrong screen.
+    _ => null,
+  };
+}
