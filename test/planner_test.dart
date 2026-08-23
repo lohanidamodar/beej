@@ -16,6 +16,35 @@ Future<FilePlan> planFor(SpecInput input) async {
   return Planner(source: source, bricks: allBricks).plan(specOf(input));
 }
 
+/// Specs that between them activate every brick.
+///
+/// Both hygiene tests below walk this list, and one of them asserts the list
+/// really does reach every brick — otherwise adding a brick with a template
+/// nobody references would slip through unnoticed.
+final coveringSpecs = <AppSpec>[
+  specOf(const SpecInput(name: 'a1')),
+  specOf(
+    const SpecInput(
+      name: 'a1',
+      backend: Backend.appwrite,
+      database: DatabaseKind.sqflite,
+      notifications: true,
+      nepaliDates: true,
+      keystoreStorePassword: 'longenough',
+    ),
+  ),
+  specOf(
+    const SpecInput(
+      name: 'a1',
+      router: RouterKind.navigator,
+      platforms: {TargetPlatform.android},
+      icons: IconSet.material,
+    ),
+  ),
+  specOf(const SpecInput(name: 'a1', designSystem: DesignSystem.popupBits)),
+  specOf(const SpecInput(name: 'a1', locales: ['en'])),
+];
+
 /// Paths the plan writes, for readable set assertions.
 Set<String> pathsOf(FilePlan plan) => plan.files.map((f) => f.path).toSet();
 
@@ -352,31 +381,22 @@ void main() {
   });
 
   group('brick hygiene', () {
+    test('the covering specs really do reach every brick', () {
+      final reached = <String>{
+        for (final spec in coveringSpecs)
+          ...allBricks.where((b) => b.appliesTo(spec)).map((b) => b.id),
+      };
+      expect(
+        allBricks.map((b) => b.id).toSet().difference(reached),
+        isEmpty,
+        reason: 'add a spec to coveringSpecs that activates these',
+      );
+    });
+
     test('every template a brick names actually ships', () async {
       final source = await TemplateSource.resolve();
-      final specs = [
-        specOf(const SpecInput(name: 'a1')),
-        specOf(
-          const SpecInput(
-            name: 'a1',
-            backend: Backend.appwrite,
-            database: DatabaseKind.sqflite,
-            notifications: true,
-            nepaliDates: true,
-            keystoreStorePassword: 'longenough',
-          ),
-        ),
-        specOf(
-          const SpecInput(
-            name: 'a1',
-            router: RouterKind.navigator,
-            platforms: {TargetPlatform.android},
-          ),
-        ),
-      ];
-
       final missing = <String>[];
-      for (final spec in specs) {
+      for (final spec in coveringSpecs) {
         for (final brick in allBricks.where((b) => b.appliesTo(spec))) {
           for (final file in brick.files(spec)) {
             if (!source.exists(file.template)) {
@@ -390,33 +410,11 @@ void main() {
 
     test('no template ships that no brick references', () async {
       final source = await TemplateSource.resolve();
-      final referenced = <String>{};
-      for (final spec in [
-        specOf(const SpecInput(name: 'a1')),
-        specOf(
-          const SpecInput(
-            name: 'a1',
-            backend: Backend.appwrite,
-            database: DatabaseKind.sqflite,
-            notifications: true,
-            nepaliDates: true,
-            keystoreStorePassword: 'longenough',
-          ),
-        ),
-        specOf(
-          const SpecInput(
-            name: 'a1',
-            router: RouterKind.navigator,
-            platforms: {TargetPlatform.android},
-          ),
-        ),
-        specOf(const SpecInput(name: 'a1', locales: ['en'])),
-      ]) {
-        for (final brick in allBricks.where((b) => b.appliesTo(spec))) {
-          referenced.addAll(brick.files(spec).map((f) => f.template));
-        }
-      }
-
+      final referenced = <String>{
+        for (final spec in coveringSpecs)
+          for (final brick in allBricks.where((b) => b.appliesTo(spec)))
+            ...brick.files(spec).map((f) => f.template),
+      };
       // An orphan is either a template someone forgot to wire up or a leftover
       // from a brick that was removed. Both are worth knowing about.
       expect(source.listAll().toSet().difference(referenced), isEmpty);

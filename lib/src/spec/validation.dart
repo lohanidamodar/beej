@@ -178,7 +178,6 @@ List<SpecIssue> validateSpec(AppSpec spec) {
   _validateLocales(spec, issues);
   _validateBackend(spec, issues);
   _validateKeystore(spec, issues);
-  _validateDesignSystem(spec, issues);
   _validateTooling(spec, issues);
 
   return issues;
@@ -510,25 +509,6 @@ void _validateKeystore(AppSpec spec, List<SpecIssue> issues) {
       ),
     );
   }
-}
-
-void _validateDesignSystem(AppSpec spec, List<SpecIssue> issues) {
-  if (!spec.usesSharedDesignSystem) return;
-  // popup_bits_design pins `material_ui: ^0.0.1` — the one-line re-export
-  // shim — while beej generates against the real 1.x library. Those
-  // constraints cannot co-resolve, so `pub get` would fail before a single
-  // file compiled. Better to say why here than to hand over a broken project.
-  issues.add(
-    const SpecIssue(
-      IssueLevel.error,
-      'designSystem',
-      'popup_bits_design pins material_ui ^0.0.1 and cannot resolve alongside '
-          'the 1.x line beej generates against',
-      hint:
-          'use designSystem: local until popup-bits-design-system widens its '
-          'material_ui constraint to ^1.0.0',
-    ),
-  );
 }
 
 void _validateTooling(AppSpec spec, List<SpecIssue> issues) {

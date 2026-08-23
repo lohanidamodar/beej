@@ -121,6 +121,16 @@ final matrix = <MatrixCase>[
     why: 'no dart:io leaks, and no Android-only brick sneaking in',
   ),
   MatrixCase(
+    'design_system',
+    const SpecInput(
+      name: 'design_system_app',
+      designSystem: DesignSystem.popupBits,
+      platforms: {TargetPlatform.android, TargetPlatform.web},
+    ),
+    // The only case that resolves a git dependency, so it also needs network.
+    why: 'the shared popup_bits_design theme, which needs material_ui 1.x',
+  ),
+  MatrixCase(
     'desktop',
     const SpecInput(
       name: 'desktop_app',

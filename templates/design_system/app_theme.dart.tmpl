@@ -1,0 +1,59 @@
+import 'package:material_ui/material_ui.dart';
+import 'package:popup_bits_design/popup_bits_design.dart';
+
+import 'accent.dart';
+
+/// Builds the app's themes from the shared PopupBits design system.
+///
+/// The design system owns typography, shape, spacing and the component
+/// themes; this file only decides which archetype the app belongs to and
+/// feeds it the accent the user picked.
+abstract final class AppTheme {
+  /// Which family of PopupBits product this app belongs to.
+  ///
+  /// Drives the display font and how round everything is:
+  /// `kid` (playful), `cultural`, `utility` (default — dense and plain),
+  /// `marketplace`.
+  static const PbArchetype archetype = PbArchetype.utility;
+
+  static ThemeData light(AccentOption accent) =>
+      _build(accent, Brightness.light);
+
+  static ThemeData dark(AccentOption accent) => _build(accent, Brightness.dark);
+
+  static ThemeData _build(AccentOption accent, Brightness brightness) {
+    return PopupBitsTheme.build(
+      archetype: archetype,
+      product: _productFor(accent, brightness),
+      brightness: brightness,
+    );
+  }
+
+  /// Turn the chosen accent into the triplet the design system expects.
+  ///
+  /// A `PbProductTheme` normally carries a hand-tuned soft tint and dark ink
+  /// alongside the accent. Here the accent is whatever the user picked in
+  /// Settings, so the other two are derived: the soft tint is used for hover
+  /// halos and selected rows, and the ink for headings on accent surfaces.
+  /// Replace this with a fixed `PbProductTheme` once the brand accent is
+  /// settled and the picker is no longer wanted.
+  static PbProductTheme _productFor(
+    AccentOption accent,
+    Brightness brightness,
+  ) {
+    final base = accent.forBrightness(brightness);
+    final hsl = HSLColor.fromColor(base);
+    return PbProductTheme(
+      id: accent.id,
+      name: accent.name,
+      accent: base,
+      accentSoft: hsl
+          .withSaturation((hsl.saturation * 0.5).clamp(0.0, 1.0))
+          .withLightness(brightness == Brightness.dark ? 0.22 : 0.94)
+          .toColor(),
+      accentInk: hsl
+          .withLightness((hsl.lightness * 0.6).clamp(0.0, 1.0))
+          .toColor(),
+    );
+  }
+}

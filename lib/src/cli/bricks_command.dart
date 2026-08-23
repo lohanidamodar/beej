@@ -31,6 +31,8 @@ class BricksCommand extends Command<int> {
 /// What makes each brick apply, phrased as the spec key that controls it.
 String triggerFor(String id) => switch (id) {
   'base' => 'always',
+  'theme_local' => 'designSystem: local',
+  'theme_popup_bits' => 'designSystem: popup_bits_design',
   'go_router' => 'router: go_router',
   'navigator' => 'router: navigator',
   'picons' => 'icons: picons',

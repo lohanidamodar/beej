@@ -60,10 +60,6 @@ class BaseBrick extends Brick {
       'lib/core/theme/accent.dart',
     ),
     const TemplateFile(
-      'base/lib/core/theme/app_theme.dart.tmpl',
-      'lib/core/theme/app_theme.dart',
-    ),
-    const TemplateFile(
       'base/lib/core/theme/google_fonts_text_theme.dart.tmpl',
       'lib/core/theme/google_fonts_text_theme.dart',
     ),

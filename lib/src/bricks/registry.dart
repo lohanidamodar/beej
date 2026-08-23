@@ -3,6 +3,7 @@ import 'base_brick.dart';
 import 'brick.dart';
 import 'feature_bricks.dart';
 import 'router_bricks.dart';
+import 'theme_bricks.dart';
 import 'tooling_bricks.dart';
 
 /// Every brick beej knows about, in the order they contribute.
@@ -12,6 +13,8 @@ import 'tooling_bricks.dart';
 /// [TemplateCollisionException] if two ever claim the same path.
 const List<Brick> allBricks = <Brick>[
   BaseBrick(),
+  LocalThemeBrick(),
+  SharedThemeBrick(),
   GoRouterBrick(),
   NavigatorBrick(),
   AppwriteBrick(),
