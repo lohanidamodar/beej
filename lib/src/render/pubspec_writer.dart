@@ -40,9 +40,7 @@ String writePubspec({
       ..writeln(
         '# Overrides constraints declared by other packages. Each entry',
       )
-      ..writeln(
-        '# explains why it is safe for the API surface actually used.',
-      )
+      ..writeln('# explains why it is safe for the API surface actually used.')
       ..writeln('dependency_overrides:');
     _writeDeps(buffer, dependencyOverrides);
   }
@@ -56,7 +54,9 @@ String writePubspec({
     buffer
       ..writeln()
       ..writeln('  # Runs `gen-l10n` as part of `flutter build`/`run`, so the')
-      ..writeln('  # generated AppLocalizations never lags behind the .arb files.')
+      ..writeln(
+        '  # generated AppLocalizations never lags behind the .arb files.',
+      )
       ..writeln('  generate: true');
   }
 
@@ -116,7 +116,11 @@ List<String> _wrapComment(String text, {required String indent}) {
     var current = StringBuffer();
     for (final word in words) {
       final candidateLength =
-          indent.length + 2 + current.length + (current.isEmpty ? 0 : 1) + word.length;
+          indent.length +
+          2 +
+          current.length +
+          (current.isEmpty ? 0 : 1) +
+          word.length;
       if (current.isNotEmpty && candidateLength > width) {
         lines.add('$indent# $current');
         current = StringBuffer(word);
@@ -135,7 +139,8 @@ List<String> _wrapComment(String text, {required String indent}) {
 /// A range like `>=9.0.0 <11.0.0` is a plain scalar containing a space and a
 /// leading `>`, which YAML reads as a folded block. Carets are safe bare.
 String _constraint(String value) {
-  final needsQuotes = value.contains(' ') ||
+  final needsQuotes =
+      value.contains(' ') ||
       value.startsWith('>') ||
       value.startsWith('<') ||
       value.startsWith('=');
@@ -145,9 +150,15 @@ String _constraint(String value) {
 /// Quote a YAML scalar when it needs it. Descriptions routinely contain a
 /// colon, which would otherwise turn the line into a nested mapping.
 String _scalar(String value) {
-  final needsQuotes = value.contains(': ') ||
+  final needsQuotes =
+      value.contains(': ') ||
       value.contains('#') ||
-      value.startsWith(RegExp(r'[\[\]{}>|*&!%@`"' r"']")) ||
+      value.startsWith(
+        RegExp(
+          r'[\[\]{}>|*&!%@`"'
+          r"']",
+        ),
+      ) ||
       value.trim() != value;
   if (!needsQuotes) return value;
   return '"${value.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';

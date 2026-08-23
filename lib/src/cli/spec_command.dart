@@ -50,7 +50,8 @@ class SpecCommand extends Command<int> {
   }
 }
 
-String exampleSpec() => '''
+String exampleSpec() =>
+    '''
 # beej spec file. Every key is optional; anything omitted takes its default.
 # Generate with: beej create --spec this-file.yaml
 

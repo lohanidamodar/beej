@@ -71,9 +71,7 @@ Map<String, dynamic> buildContext(AppSpec spec) {
 
     'picons': spec.usesPicons,
     'materialIcons': !spec.usesPicons,
-    'iconImport': spec.usesPicons
-        ? "import 'package:picons/picons.dart';"
-        : '',
+    'iconImport': spec.usesPicons ? "import 'package:picons/picons.dart';" : '',
 
     'sharedDesignSystem': spec.usesSharedDesignSystem,
     'localDesignSystem': !spec.usesSharedDesignSystem,
@@ -90,6 +88,8 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'screenshots': spec.tooling.screenshots,
     'signing': spec.keystore != null,
     'keystoreAlias': spec.keystore?.alias ?? '',
+    'keystoreStorePassword': spec.keystore?.storePassword ?? '',
+    'keystoreKeyPassword': spec.keystore?.keyPassword ?? '',
     'keystoreFile': 'keystore/${spec.name}.jks',
 
     // --- Localization ---
@@ -109,26 +109,48 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     // --- Icon constants used by generated chrome ---
     // Named explicitly per set: these are beej's own chrome, so there is a
     // correct icon in both vocabularies and nothing to guess.
-    'iconSettings': _chrome(spec, picons: 'gear', material: 'settings_outlined'),
+    'iconSettings': _chrome(
+      spec,
+      picons: 'gear',
+      material: 'settings_outlined',
+    ),
     'iconAbout': _chrome(spec, picons: 'info', material: 'info_outline'),
-    'iconPrivacy':
-        _chrome(spec, picons: 'shieldCheck', material: 'privacy_tip_outlined'),
-    'iconLicense':
-        _chrome(spec, picons: 'scroll', material: 'description_outlined'),
-    'iconShare':
-        _chrome(spec, picons: 'shareNetwork', material: 'share_outlined'),
+    'iconPrivacy': _chrome(
+      spec,
+      picons: 'shieldCheck',
+      material: 'privacy_tip_outlined',
+    ),
+    'iconLicense': _chrome(
+      spec,
+      picons: 'scroll',
+      material: 'description_outlined',
+    ),
+    'iconShare': _chrome(
+      spec,
+      picons: 'shareNetwork',
+      material: 'share_outlined',
+    ),
     'iconRate': _chrome(spec, picons: 'star', material: 'star_outline'),
-    'iconMoreApps':
-        _chrome(spec, picons: 'appWindow', material: 'apps_outlined'),
+    'iconMoreApps': _chrome(
+      spec,
+      picons: 'appWindow',
+      material: 'apps_outlined',
+    ),
     'iconSupport': _chrome(spec, picons: 'envelope', material: 'mail_outline'),
-    'iconAccent':
-        _chrome(spec, picons: 'palette', material: 'palette_outlined'),
+    'iconAccent': _chrome(
+      spec,
+      picons: 'palette',
+      material: 'palette_outlined',
+    ),
     'iconTheme': _chrome(spec, picons: 'moon', material: 'dark_mode_outlined'),
     'iconLanguage': _chrome(spec, picons: 'translate', material: 'translate'),
     'iconTextSize': _chrome(spec, picons: 'textAa', material: 'format_size'),
     'iconAccount': _chrome(spec, picons: 'user', material: 'person_outline'),
-    'iconSignOut':
-        _chrome(spec, picons: 'signOut', material: 'logout_outlined'),
+    'iconSignOut': _chrome(
+      spec,
+      picons: 'signOut',
+      material: 'logout_outlined',
+    ),
   };
 }
 
@@ -138,5 +160,4 @@ String _chrome(
   AppSpec spec, {
   required String picons,
   required String material,
-}) =>
-    spec.usesPicons ? 'PiconsRegular.$picons' : 'Icons.$material';
+}) => spec.usesPicons ? 'PiconsRegular.$picons' : 'Icons.$material';

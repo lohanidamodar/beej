@@ -54,12 +54,14 @@ class Planner {
             ? raw
             : _renderString(raw, fileContext, templateFile.template);
 
-        files.add(PlannedFile(
-          path: destination,
-          content: content,
-          brickId: brick.id,
-          executable: templateFile.executable,
-        ));
+        files.add(
+          PlannedFile(
+            path: destination,
+            content: content,
+            brickId: brick.id,
+            executable: templateFile.executable,
+          ),
+        );
       }
 
       removals.addAll(brick.removes(spec));
@@ -79,11 +81,9 @@ class Planner {
       assetDirs: assetDirs.toList()..sort(),
       generateL10n: true,
     );
-    files.add(PlannedFile(
-      path: 'pubspec.yaml',
-      content: pubspec,
-      brickId: 'base',
-    ));
+    files.add(
+      PlannedFile(path: 'pubspec.yaml', content: pubspec, brickId: 'base'),
+    );
 
     files.sort((a, b) => a.path.compareTo(b.path));
 

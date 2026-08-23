@@ -30,7 +30,8 @@ class TemplateSource {
       Uri.parse('package:beej/beej.dart'),
     );
     final candidates = <String>[
-      if (libUri != null) p.join(p.dirname(p.dirname(libUri.toFilePath())), 'templates'),
+      if (libUri != null)
+        p.join(p.dirname(p.dirname(libUri.toFilePath())), 'templates'),
       // Running from the package root during development.
       p.join(Directory.current.path, 'templates'),
     ];
@@ -63,12 +64,13 @@ class TemplateSource {
       File(p.join(root.path, relativePath)).existsSync();
 
   /// Every template file that ships, as paths relative to `templates/`.
-  List<String> listAll() => root
-      .listSync(recursive: true)
-      .whereType<File>()
-      .map((f) => p.relative(f.path, from: root.path).replaceAll(r'\', '/'))
-      .toList()
-    ..sort();
+  List<String> listAll() =>
+      root
+          .listSync(recursive: true)
+          .whereType<File>()
+          .map((f) => p.relative(f.path, from: root.path).replaceAll(r'\', '/'))
+          .toList()
+        ..sort();
 }
 
 class TemplateSourceException implements Exception {

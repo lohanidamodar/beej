@@ -1,0 +1,8 @@
+source "https://rubygems.org"
+
+gem "fastlane"
+
+# The shared Play publishing lanes. Pulled from git rather than RubyGems
+# because it is an internal plugin.
+gem "fastlane-plugin-play_publisher",
+    git: "https://github.com/lohanidamodar/fastlane-plugin-play_publisher"

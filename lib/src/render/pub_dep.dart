@@ -17,11 +17,11 @@ class PubDep {
 
   /// A dependency on a version from pub.dev.
   const PubDep.hosted(String name, String constraint, {String? comment})
-      : this(name, constraint: constraint, comment: comment);
+    : this(name, constraint: constraint, comment: comment);
 
   /// A dependency provided by the Flutter SDK (`sdk: flutter`).
   const PubDep.flutterSdk(String name, {String? comment})
-      : this(name, sdk: 'flutter', comment: comment);
+    : this(name, sdk: 'flutter', comment: comment);
 
   /// A dependency pulled from a git repository.
   const PubDep.git(

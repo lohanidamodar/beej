@@ -9,7 +9,7 @@ import 'package:path/path.dart' as p;
 /// installed Flutter produces — including whatever changed in the last release.
 class FlutterTool {
   FlutterTool({String? executable})
-      : executable = executable ?? _defaultExecutable();
+    : executable = executable ?? _defaultExecutable();
 
   final String executable;
 
@@ -81,11 +81,11 @@ class FlutterTool {
   Future<ProcessRunResult> format(String directory) async {
     final dart = _dartExecutable();
     try {
-      final result = await Process.run(dart, [
-        'format',
-        p.join(directory, 'lib'),
-        p.join(directory, 'test'),
-      ], environment: const {'TERM': 'dumb'});
+      final result = await Process.run(
+        dart,
+        ['format', p.join(directory, 'lib'), p.join(directory, 'test')],
+        environment: const {'TERM': 'dumb'},
+      );
       return ProcessRunResult(
         exitCode: result.exitCode,
         stdout: result.stdout.toString(),
@@ -176,12 +176,10 @@ class FlutterVersion {
   /// Pull the two versions out of `flutter --version --machine` JSON without
   /// a JSON dependency — the shape is stable and we want two strings.
   static FlutterVersion? parse(String machineOutput) {
-    final flutter = RegExp(
-      r'"frameworkVersion"\s*:\s*"([^"]+)"',
-    ).firstMatch(machineOutput);
-    final dart = RegExp(
-      r'"dartSdkVersion"\s*:\s*"([^"\s]+)',
-    ).firstMatch(machineOutput);
+    final flutter = RegExp(r'"frameworkVersion"\s*:\s*"([^"]+)"')
+        .firstMatch(machineOutput);
+    final dart = RegExp(r'"dartSdkVersion"\s*:\s*"([^"\s]+)')
+        .firstMatch(machineOutput);
     if (flutter == null) return null;
     return FlutterVersion(
       flutter: flutter.group(1)!,

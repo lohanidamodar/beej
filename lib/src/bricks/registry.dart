@@ -3,6 +3,7 @@ import 'base_brick.dart';
 import 'brick.dart';
 import 'feature_bricks.dart';
 import 'router_bricks.dart';
+import 'tooling_bricks.dart';
 
 /// Every brick beej knows about, in the order they contribute.
 ///
@@ -19,4 +20,9 @@ const List<Brick> allBricks = <Brick>[
   InAppUpdateBrick(),
   ReviewBrick(),
   NepaliDatesBrick(),
+  NotificationsBrick(),
+  AndroidBrick(),
+  FastlaneBrick(),
+  GithubWorkflowBrick(),
+  ScreenshotsBrick(),
 ];

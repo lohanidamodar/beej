@@ -146,7 +146,10 @@ class BaseBrick extends Brick {
       ),
 
     // --- Project files ---
-    const TemplateFile('base/analysis_options.yaml.tmpl', 'analysis_options.yaml'),
+    const TemplateFile(
+      'base/analysis_options.yaml.tmpl',
+      'analysis_options.yaml',
+    ),
     const TemplateFile('base/gitignore.tmpl', '.gitignore'),
     const TemplateFile('base/README.md.tmpl', 'README.md'),
     const TemplateFile('base/PROJECT.md.tmpl', 'PROJECT.md'),
@@ -202,7 +205,8 @@ class BaseBrick extends Brick {
     PubDep.hosted(
       'shared_preferences',
       Versions.sharedPreferences,
-      comment: 'Backs the persisted user settings (accent, theme, language, '
+      comment:
+          'Backs the persisted user settings (accent, theme, language, '
           'text size), loaded during bootstrap before the first frame.',
     ),
     PubDep.hosted(

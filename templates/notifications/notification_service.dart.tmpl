@@ -1,0 +1,129 @@
+import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
+
+/// Local notifications and scheduled reminders.
+///
+/// A singleton because the plugin is one: two instances would fight over the
+/// same platform channel and the same notification ids.
+class NotificationService {
+  NotificationService._();
+
+  static final NotificationService instance = NotificationService._();
+
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
+
+  /// Payload of the notification the user tapped, if any.
+  ///
+  /// A [ValueNotifier] rather than a stream because a cold start delivers the
+  /// tap *before* anything is listening — the value survives until whoever
+  /// cares gets around to reading it, and a stream event would be lost.
+  final ValueNotifier<String?> tappedPayload = ValueNotifier<String?>(null);
+
+  bool _initialised = false;
+
+  Future<void> init() async {
+    if (_initialised || kIsWeb) return;
+
+    // Zoned scheduling needs the device's IANA zone, or a reminder set for
+    // 9am drifts by the UTC offset and breaks again at every DST change.
+    tz_data.initializeTimeZones();
+    try {
+      final zone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(zone.identifier));
+    } catch (error) {
+      developer.log(
+        'could not resolve the device time zone; using UTC',
+        name: 'notifications',
+        error: error,
+      );
+    }
+
+    await _plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(
+          // Asked for explicitly later, at a moment the user understands why,
+          // rather than with a permission sheet on first launch.
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        tappedPayload.value = response.payload;
+      },
+    );
+
+    // A tap that launched the app from cold arrives here, not through the
+    // callback above.
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      tappedPayload.value = launchDetails?.notificationResponse?.payload;
+    }
+
+    _initialised = true;
+  }
+
+  /// Ask for permission. Call this when the user turns a reminder on.
+  Future<bool> requestPermission() async {
+    if (kIsWeb) return false;
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android != null) {
+      return await android.requestNotificationsPermission() ?? false;
+    }
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (ios != null) {
+      return await ios.requestPermissions(alert: true, badge: true, sound: true) ??
+          false;
+    }
+    return false;
+  }
+
+  static const NotificationDetails _defaultDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'reminders',
+      'Reminders',
+      channelDescription: 'Scheduled reminders you set in the app',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(),
+  );
+
+  /// Schedule [body] for [when]. Ids are the caller's to manage — reuse one to
+  /// replace a reminder, and keep it stable so [cancel] can find it.
+  Future<void> schedule({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+    String? payload,
+  }) async {
+    if (kIsWeb) return;
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(when, tz.local),
+      notificationDetails: _defaultDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: payload,
+    );
+  }
+
+  Future<void> cancel(int id) => _plugin.cancel(id: id);
+
+  Future<void> cancelAll() => _plugin.cancelAll();
+}

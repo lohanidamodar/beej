@@ -115,8 +115,7 @@ class SpecInput {
     githubWorkflow: other.githubWorkflow ?? githubWorkflow,
     screenshots: other.screenshots ?? screenshots,
     keystoreAlias: other.keystoreAlias ?? keystoreAlias,
-    keystoreStorePassword:
-        other.keystoreStorePassword ?? keystoreStorePassword,
+    keystoreStorePassword: other.keystoreStorePassword ?? keystoreStorePassword,
     keystoreKeyPassword: other.keystoreKeyPassword ?? keystoreKeyPassword,
     keystoreDname: other.keystoreDname ?? keystoreDname,
   );
@@ -207,8 +206,7 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
       review: input.review ?? SpecDefaults.review,
     ),
     about: AboutConfig(
-      privacyPolicyUrl:
-          input.privacyPolicyUrl ?? defaultAbout.privacyPolicyUrl,
+      privacyPolicyUrl: input.privacyPolicyUrl ?? defaultAbout.privacyPolicyUrl,
       moreAppsUrl: input.moreAppsUrl ?? SpecDefaults.moreAppsUrl,
       supportEmail: input.supportEmail ?? SpecDefaults.supportEmail,
       legalese: input.legalese ?? defaultAbout.legalese,
@@ -222,9 +220,8 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
         ? KeystoreConfig(
             alias: input.keystoreAlias ?? name,
             storePassword: input.keystoreStorePassword ?? '',
-            keyPassword: input.keystoreKeyPassword ??
-                input.keystoreStorePassword ??
-                '',
+            keyPassword:
+                input.keystoreKeyPassword ?? input.keystoreStorePassword ?? '',
             dname: input.keystoreDname,
           )
         : null,

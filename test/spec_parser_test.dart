@@ -24,18 +24,18 @@ org: com.popupbits
     });
 
     test('platforms accepts a list, "all", and "mobile"', () {
-      expect(
-        parseSpecYaml('platforms: [android, web]').platforms,
-        {TargetPlatform.android, TargetPlatform.web},
-      );
+      expect(parseSpecYaml('platforms: [android, web]').platforms, {
+        TargetPlatform.android,
+        TargetPlatform.web,
+      });
       expect(
         parseSpecYaml('platforms: all').platforms,
         TargetPlatform.values.toSet(),
       );
-      expect(
-        parseSpecYaml('platforms: mobile').platforms,
-        {TargetPlatform.android, TargetPlatform.ios},
-      );
+      expect(parseSpecYaml('platforms: mobile').platforms, {
+        TargetPlatform.android,
+        TargetPlatform.ios,
+      });
     });
 
     test('rejects an unknown platform by name', () {
@@ -209,7 +209,11 @@ signing:
 
   group('SpecInput.overriddenBy', () {
     test('the later layer wins field by field', () {
-      const base = SpecInput(name: 'a', org: 'com.a', router: RouterKind.navigator);
+      const base = SpecInput(
+        name: 'a',
+        org: 'com.a',
+        router: RouterKind.navigator,
+      );
       const top = SpecInput(name: 'b');
       final merged = base.overriddenBy(top);
       expect(merged.name, 'b');

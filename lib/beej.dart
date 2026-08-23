@@ -6,4 +6,3 @@ export 'src/spec/enums.dart';
 export 'src/spec/spec_input.dart';
 export 'src/spec/spec_parser.dart';
 export 'src/spec/validation.dart';
-

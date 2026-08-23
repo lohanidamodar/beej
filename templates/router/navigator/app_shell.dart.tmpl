@@ -6,7 +6,9 @@ import 'package:picons/picons.dart';
 {{#tabs}}
 import '../{{id}}/{{id}}_screen.dart';
 {{/tabs}}
+{{#hasDrawer}}
 import '../../core/theme/tokens.dart';
+{{/hasDrawer}}
 import '../../core/util/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../settings/settings_screen.dart';

@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 
 import 'bricks/registry.dart';
 import 'flutter/flutter_tool.dart';
+import 'flutter/keystore.dart';
 import 'render/file_plan.dart';
 import 'render/planner.dart';
 import 'render/template_source.dart';
@@ -47,11 +48,13 @@ class Generator {
   Generator({
     required this.source,
     FlutterTool? flutter,
+    this.keystoreGenerator = const KeystoreGenerator(),
     this.reporter,
   }) : flutter = flutter ?? FlutterTool();
 
   final TemplateSource source;
   final FlutterTool flutter;
+  final KeystoreGenerator keystoreGenerator;
   final ProgressReporter? reporter;
 
   void _report(String message) => reporter?.call(message);
@@ -74,8 +77,7 @@ class Generator {
 
     final target = p.join(parentDirectory, spec.name);
     final targetDirectory = Directory(target);
-    if (targetDirectory.existsSync() &&
-        targetDirectory.listSync().isNotEmpty) {
+    if (targetDirectory.existsSync() && targetDirectory.listSync().isNotEmpty) {
       throw GenerationException('"$target" already exists and is not empty');
     }
 
@@ -87,6 +89,21 @@ class Generator {
     _applyPlan(plan, target);
 
     final skipped = <String>[];
+
+    if (spec.keystore != null) {
+      switch (await keystoreGenerator.generate(
+        spec,
+        projectDirectory: target,
+      )) {
+        case KeystoreCreated(:final path):
+          _report('keystore at $path');
+        case KeystoreSkipped(:final reason):
+          skipped.add('keystore generation — $reason');
+        case KeystoreFailed(:final output):
+          skipped.add('keystore generation:\n$output');
+      }
+    }
+
     if (runPubGet) {
       await _pubGetAndL10n(target, skipped);
     } else {
@@ -113,8 +130,11 @@ class Generator {
         'the spec has ${errors.length} problem'
         '${errors.length == 1 ? '' : 's'}',
         detail: errors
-            .map((e) => '  • ${e.field}: ${e.message}'
-                '${e.hint == null ? '' : '\n    ${e.hint}'}')
+            .map(
+              (e) =>
+                  '  • ${e.field}: ${e.message}'
+                  '${e.hint == null ? '' : '\n    ${e.hint}'}',
+            )
             .join('\n'),
       );
     }
@@ -131,10 +151,7 @@ class Generator {
       description: spec.description,
     );
     if (!result.ok) {
-      throw GenerationException(
-        'flutter create failed',
-        detail: result.output,
-      );
+      throw GenerationException('flutter create failed', detail: result.output);
     }
   }
 

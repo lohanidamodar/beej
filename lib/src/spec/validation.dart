@@ -25,32 +25,135 @@ class SpecIssue {
 
 /// Dart reserved words that cannot be a package name.
 const _dartReserved = {
-  'abstract', 'as', 'assert', 'async', 'await', 'break', 'case', 'catch',
-  'class', 'const', 'continue', 'covariant', 'default', 'deferred', 'do',
-  'dynamic', 'else', 'enum', 'export', 'extends', 'extension', 'external',
-  'factory', 'false', 'final', 'finally', 'for', 'function', 'get', 'hide',
-  'if', 'implements', 'import', 'in', 'interface', 'is', 'late', 'library',
-  'mixin', 'new', 'null', 'on', 'operator', 'part', 'required', 'rethrow',
-  'return', 'sealed', 'set', 'show', 'static', 'super', 'switch', 'sync',
-  'this', 'throw', 'true', 'try', 'typedef', 'var', 'void', 'when', 'while',
-  'with', 'yield',
+  'abstract',
+  'as',
+  'assert',
+  'async',
+  'await',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'covariant',
+  'default',
+  'deferred',
+  'do',
+  'dynamic',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'extension',
+  'external',
+  'factory',
+  'false',
+  'final',
+  'finally',
+  'for',
+  'function',
+  'get',
+  'hide',
+  'if',
+  'implements',
+  'import',
+  'in',
+  'interface',
+  'is',
+  'late',
+  'library',
+  'mixin',
+  'new',
+  'null',
+  'on',
+  'operator',
+  'part',
+  'required',
+  'rethrow',
+  'return',
+  'sealed',
+  'set',
+  'show',
+  'static',
+  'super',
+  'switch',
+  'sync',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typedef',
+  'var',
+  'void',
+  'when',
+  'while',
+  'with',
+  'yield',
 };
 
 /// Package names that collide with something Flutter already provides.
 const _reservedPackageNames = {
-  'flutter', 'flutter_test', 'flutter_localizations', 'test', 'integration_test',
+  'flutter',
+  'flutter_test',
+  'flutter_localizations',
+  'test',
+  'integration_test',
 };
 
 /// Java keywords. An Android `applicationId` segment that is one of these
 /// fails the Gradle build with a confusing error, so reject it here instead.
 const _javaKeywords = {
-  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char',
-  'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum',
-  'extends', 'final', 'finally', 'float', 'for', 'goto', 'if', 'implements',
-  'import', 'instanceof', 'int', 'interface', 'long', 'native', 'new',
-  'package', 'private', 'protected', 'public', 'return', 'short', 'static',
-  'strictfp', 'super', 'switch', 'synchronized', 'this', 'throw', 'throws',
-  'transient', 'try', 'void', 'volatile', 'while',
+  'abstract',
+  'assert',
+  'boolean',
+  'break',
+  'byte',
+  'case',
+  'catch',
+  'char',
+  'class',
+  'const',
+  'continue',
+  'default',
+  'do',
+  'double',
+  'else',
+  'enum',
+  'extends',
+  'final',
+  'finally',
+  'float',
+  'for',
+  'goto',
+  'if',
+  'implements',
+  'import',
+  'instanceof',
+  'int',
+  'interface',
+  'long',
+  'native',
+  'new',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'return',
+  'short',
+  'static',
+  'strictfp',
+  'super',
+  'switch',
+  'synchronized',
+  'this',
+  'throw',
+  'throws',
+  'transient',
+  'try',
+  'void',
+  'volatile',
+  'while',
 };
 
 /// Locales beej ships real translations for. Adding one means adding an `.arb`
@@ -88,34 +191,39 @@ void _validateName(AppSpec spec, List<SpecIssue> issues) {
     return;
   }
   if (!_packageNamePattern.hasMatch(name)) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'name',
-      '"$name" is not a valid Dart package name',
-      hint: 'lowercase letters, digits and underscores; must start with a '
-          'letter — e.g. mero_nepali',
-    ));
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'name',
+        '"$name" is not a valid Dart package name',
+        hint:
+            'lowercase letters, digits and underscores; must start with a '
+            'letter — e.g. mero_nepali',
+      ),
+    );
   }
   if (_dartReserved.contains(name)) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'name',
-      '"$name" is a Dart reserved word',
-    ));
+    issues.add(
+      SpecIssue(IssueLevel.error, 'name', '"$name" is a Dart reserved word'),
+    );
   }
   if (_reservedPackageNames.contains(name)) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'name',
-      '"$name" collides with a package Flutter provides',
-    ));
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'name',
+        '"$name" collides with a package Flutter provides',
+      ),
+    );
   }
   if (name.length > 64) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'name',
-      'must be 64 characters or fewer',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'name',
+        'must be 64 characters or fewer',
+      ),
+    );
   }
 }
 
@@ -127,65 +235,76 @@ void _validateOrg(AppSpec spec, List<SpecIssue> issues) {
   }
   final segments = org.split('.');
   if (segments.length < 2) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'org',
-      '"$org" needs at least two reverse-DNS segments',
-      hint: 'e.g. com.popupbits',
-    ));
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'org',
+        '"$org" needs at least two reverse-DNS segments',
+        hint: 'e.g. com.popupbits',
+      ),
+    );
   }
   for (final segment in segments) {
     if (!_segmentPattern.hasMatch(segment)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'org',
-        'segment "$segment" is not a valid identifier',
-        hint: 'lowercase letters, digits and underscores; must start with a '
-            'letter',
-      ));
+      issues.add(
+        SpecIssue(
+          IssueLevel.error,
+          'org',
+          'segment "$segment" is not a valid identifier',
+          hint:
+              'lowercase letters, digits and underscores; must start with a '
+              'letter',
+        ),
+      );
     } else if (_javaKeywords.contains(segment)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'org',
-        'segment "$segment" is a Java keyword and will break the Android build',
-      ));
+      issues.add(
+        SpecIssue(
+          IssueLevel.error,
+          'org',
+          'segment "$segment" is a Java keyword and will break the Android build',
+        ),
+      );
     }
   }
   if (_javaKeywords.contains(spec.name)) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'name',
-      '"${spec.name}" is a Java keyword, so the applicationId '
-          '"${spec.applicationId}" will break the Android build',
-    ));
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'name',
+        '"${spec.name}" is a Java keyword, so the applicationId '
+            '"${spec.applicationId}" will break the Android build',
+      ),
+    );
   }
 }
 
 void _validateDisplay(AppSpec spec, List<SpecIssue> issues) {
   if (spec.displayName.trim().isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'displayName',
-      'must not be empty',
-    ));
+    issues.add(
+      const SpecIssue(IssueLevel.error, 'displayName', 'must not be empty'),
+    );
   }
   if (spec.description.trim().isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.warning,
-      'description',
-      'is empty — it lands in pubspec.yaml and the store listing',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'description',
+        'is empty — it lands in pubspec.yaml and the store listing',
+      ),
+    );
   }
 }
 
 void _validatePlatforms(AppSpec spec, List<SpecIssue> issues) {
   if (spec.platforms.isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'platforms',
-      'at least one platform is required',
-      hint: 'android, ios, web, windows, macos, linux',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'platforms',
+        'at least one platform is required',
+        hint: 'android, ios, web, windows, macos, linux',
+      ),
+    );
   }
 }
 
@@ -194,62 +313,72 @@ void _validateNavigation(AppSpec spec, List<SpecIssue> issues) {
   // build would ship with unroutable URLs. go_router is the only web-safe
   // choice we generate.
   if (spec.router == RouterKind.navigator && spec.hasWeb) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'router',
-      'the navigator shell cannot serve the web platform',
-      hint: 'use router: go_router, or drop web from platforms',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'router',
+        'the navigator shell cannot serve the web platform',
+        hint: 'use router: go_router, or drop web from platforms',
+      ),
+    );
   }
   if (spec.router == RouterKind.navigator && spec.hasDesktop) {
-    issues.add(const SpecIssue(
-      IssueLevel.warning,
-      'router',
-      'the navigator shell targets mobile; desktop windows get no deep links',
-      hint: 'go_router handles desktop better',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'router',
+        'the navigator shell targets mobile; desktop windows get no deep links',
+        hint: 'go_router handles desktop better',
+      ),
+    );
   }
 
   final tabs = spec.tabs;
   if (tabs.isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'nav.tabs',
-      'at least one destination is required',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'nav.tabs',
+        'at least one destination is required',
+      ),
+    );
   }
   // Settings is always appended as the final destination, so five declared
   // tabs already means six — one past what a NavigationBar reads well with.
   if (tabs.length > 5) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'nav.tabs',
-      '${tabs.length} tabs is too many (max 5; Settings is added automatically)',
-    ));
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'nav.tabs',
+        '${tabs.length} tabs is too many (max 5; Settings is added automatically)',
+      ),
+    );
   }
   final seen = <String>{};
   for (final tab in tabs) {
     if (!_packageNamePattern.hasMatch(tab.id)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'nav.tabs',
-        'tab id "${tab.id}" is not a valid identifier',
-        hint: 'lowercase letters, digits and underscores',
-      ));
+      issues.add(
+        SpecIssue(
+          IssueLevel.error,
+          'nav.tabs',
+          'tab id "${tab.id}" is not a valid identifier',
+          hint: 'lowercase letters, digits and underscores',
+        ),
+      );
     }
     if (tab.id == 'settings') {
-      issues.add(const SpecIssue(
-        IssueLevel.error,
-        'nav.tabs',
-        '"settings" is generated automatically — remove it from the tab list',
-      ));
+      issues.add(
+        const SpecIssue(
+          IssueLevel.error,
+          'nav.tabs',
+          '"settings" is generated automatically — remove it from the tab list',
+        ),
+      );
     }
     if (!seen.add(tab.id)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'nav.tabs',
-        'duplicate tab id "${tab.id}"',
-      ));
+      issues.add(
+        SpecIssue(IssueLevel.error, 'nav.tabs', 'duplicate tab id "${tab.id}"'),
+      );
     }
   }
 }
@@ -257,28 +386,30 @@ void _validateNavigation(AppSpec spec, List<SpecIssue> issues) {
 void _validateLocales(AppSpec spec, List<SpecIssue> issues) {
   final locales = spec.locales;
   if (!locales.contains('en')) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'locales',
-      'must include "en" — it is the ARB template language',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'locales',
+        'must include "en" — it is the ARB template language',
+      ),
+    );
   }
   final seen = <String>{};
   for (final locale in locales) {
     if (!supportedLocales.contains(locale)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'locales',
-        'no translations bundled for "$locale"',
-        hint: 'supported: ${(supportedLocales.toList()..sort()).join(', ')}',
-      ));
+      issues.add(
+        SpecIssue(
+          IssueLevel.error,
+          'locales',
+          'no translations bundled for "$locale"',
+          hint: 'supported: ${(supportedLocales.toList()..sort()).join(', ')}',
+        ),
+      );
     }
     if (!seen.add(locale)) {
-      issues.add(SpecIssue(
-        IssueLevel.error,
-        'locales',
-        'duplicate locale "$locale"',
-      ));
+      issues.add(
+        SpecIssue(IssueLevel.error, 'locales', 'duplicate locale "$locale"'),
+      );
     }
   }
 }
@@ -286,46 +417,58 @@ void _validateLocales(AppSpec spec, List<SpecIssue> issues) {
 void _validateBackend(AppSpec spec, List<SpecIssue> issues) {
   if (spec.backend != Backend.appwrite) {
     if (spec.appwrite != null) {
-      issues.add(const SpecIssue(
-        IssueLevel.warning,
-        'backend',
-        'appwrite settings are present but backend is not appwrite — ignored',
-      ));
+      issues.add(
+        const SpecIssue(
+          IssueLevel.warning,
+          'backend',
+          'appwrite settings are present but backend is not appwrite — ignored',
+        ),
+      );
     }
     return;
   }
 
   final appwrite = spec.appwrite;
   if (appwrite == null) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'backend',
-      'backend is appwrite but no connection details were given',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'backend',
+        'backend is appwrite but no connection details were given',
+      ),
+    );
     return;
   }
   final endpoint = Uri.tryParse(appwrite.endpoint);
-  if (endpoint == null || !endpoint.isAbsolute || !endpoint.scheme.startsWith('http')) {
-    issues.add(SpecIssue(
-      IssueLevel.error,
-      'backend.endpoint',
-      '"${appwrite.endpoint}" is not an absolute http(s) URL',
-      hint: 'e.g. https://cloud.appwrite.io/v1',
-    ));
+  if (endpoint == null ||
+      !endpoint.isAbsolute ||
+      !endpoint.scheme.startsWith('http')) {
+    issues.add(
+      SpecIssue(
+        IssueLevel.error,
+        'backend.endpoint',
+        '"${appwrite.endpoint}" is not an absolute http(s) URL',
+        hint: 'e.g. https://cloud.appwrite.io/v1',
+      ),
+    );
   }
   if (appwrite.projectId.trim().isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'backend.projectId',
-      'must not be empty',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'backend.projectId',
+        'must not be empty',
+      ),
+    );
   }
   if (appwrite.databaseId.trim().isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'backend.databaseId',
-      'must not be empty',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'backend.databaseId',
+        'must not be empty',
+      ),
+    );
   }
 }
 
@@ -334,34 +477,38 @@ void _validateKeystore(AppSpec spec, List<SpecIssue> issues) {
   if (keystore == null) return;
 
   if (!spec.hasAndroid) {
-    issues.add(const SpecIssue(
-      IssueLevel.warning,
-      'signing',
-      'keystore details given but android is not a target platform — skipped',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'signing',
+        'keystore details given but android is not a target platform — skipped',
+      ),
+    );
     return;
   }
   if (keystore.alias.trim().isEmpty) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'signing.alias',
-      'must not be empty',
-    ));
+    issues.add(
+      const SpecIssue(IssueLevel.error, 'signing.alias', 'must not be empty'),
+    );
   }
   // keytool refuses anything shorter, and it does so only after prompting.
   if (keystore.storePassword.length < 6) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'signing.storePassword',
-      'must be at least 6 characters (keytool requirement)',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'signing.storePassword',
+        'must be at least 6 characters (keytool requirement)',
+      ),
+    );
   }
   if (keystore.keyPassword.length < 6) {
-    issues.add(const SpecIssue(
-      IssueLevel.error,
-      'signing.keyPassword',
-      'must be at least 6 characters (keytool requirement)',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.error,
+        'signing.keyPassword',
+        'must be at least 6 characters (keytool requirement)',
+      ),
+    );
   }
 }
 
@@ -371,29 +518,36 @@ void _validateDesignSystem(AppSpec spec, List<SpecIssue> issues) {
   // shim — while beej generates against the real 1.x library. Those
   // constraints cannot co-resolve, so `pub get` would fail before a single
   // file compiled. Better to say why here than to hand over a broken project.
-  issues.add(const SpecIssue(
-    IssueLevel.error,
-    'designSystem',
-    'popup_bits_design pins material_ui ^0.0.1 and cannot resolve alongside '
-        'the 1.x line beej generates against',
-    hint: 'use designSystem: local until popup-bits-design-system widens its '
-        'material_ui constraint to ^1.0.0',
-  ));
+  issues.add(
+    const SpecIssue(
+      IssueLevel.error,
+      'designSystem',
+      'popup_bits_design pins material_ui ^0.0.1 and cannot resolve alongside '
+          'the 1.x line beej generates against',
+      hint:
+          'use designSystem: local until popup-bits-design-system widens its '
+          'material_ui constraint to ^1.0.0',
+    ),
+  );
 }
 
 void _validateTooling(AppSpec spec, List<SpecIssue> issues) {
   if (spec.tooling.githubWorkflow && !spec.hasAndroid) {
-    issues.add(const SpecIssue(
-      IssueLevel.warning,
-      'tooling.githubWorkflow',
-      'the release workflow publishes to Play, but android is not targeted',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'tooling.githubWorkflow',
+        'the release workflow publishes to Play, but android is not targeted',
+      ),
+    );
   }
   if (spec.features.inAppUpdate && !spec.hasAndroid) {
-    issues.add(const SpecIssue(
-      IssueLevel.warning,
-      'features.inAppUpdate',
-      'Play in-app update is Android-only; it will no-op everywhere else',
-    ));
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'features.inAppUpdate',
+        'Play in-app update is Android-only; it will no-op everywhere else',
+      ),
+    );
   }
 }

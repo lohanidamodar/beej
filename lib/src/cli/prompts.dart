@@ -118,9 +118,7 @@ Future<SpecInput> promptForMissing(
       _Choice('drawer', 'Drawer only'),
     ]);
     result = result.overriddenBy(
-      SpecInput(
-        navStyle: NavStyle.values.firstWhere((n) => n.wire == choice),
-      ),
+      SpecInput(navStyle: NavStyle.values.firstWhere((n) => n.wire == choice)),
     );
   }
 
@@ -134,10 +132,11 @@ Future<SpecInput> promptForMissing(
     result = result.overriddenBy(
       SpecInput(
         tabs: [
-          for (final id in raw
-              .split(',')
-              .map((part) => part.trim())
-              .where((part) => part.isNotEmpty))
+          for (final id
+              in raw
+                  .split(',')
+                  .map((part) => part.trim())
+                  .where((part) => part.isNotEmpty))
             TabSpec(
               id: id,
               label: titleizeTabId(id),
@@ -176,7 +175,8 @@ Future<SpecInput> promptForMissing(
     );
   }
 
-  if (result.inAppUpdate == null && platforms.contains(TargetPlatform.android)) {
+  if (result.inAppUpdate == null &&
+      platforms.contains(TargetPlatform.android)) {
     result = result.overriddenBy(
       SpecInput(
         inAppUpdate: _confirm(console, 'Play in-app update?', defaultYes: true),

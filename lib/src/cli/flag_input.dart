@@ -38,12 +38,14 @@ void addCreateFlags(ArgParser parser) {
       negatable: false,
       help: 'Skip `flutter pub get` and `gen-l10n` after generating.',
     )
-
     // --- Identity ---
-    ..addOption('org', help: 'Reverse-DNS org prefix.', valueHelp: 'com.popupbits')
+    ..addOption(
+      'org',
+      help: 'Reverse-DNS org prefix.',
+      valueHelp: 'com.popupbits',
+    )
     ..addOption('display-name', help: 'Human-facing app name.')
     ..addOption('description', help: 'One-line description.')
-
     // --- Choices ---
     ..addOption(
       'platforms',
@@ -89,25 +91,25 @@ void addCreateFlags(ArgParser parser) {
       allowed: IconSet.values.map((v) => v.wire),
       help: 'Icon set.',
     )
-
     // --- Features ---
     ..addFlag('in-app-update', help: 'Play flexible in-app update.')
     ..addFlag('notifications', help: 'Local notifications and time zones.')
     ..addFlag('nepali-dates', help: 'Bikram Sambat dates.')
     ..addFlag('review', help: 'In-app review prompt.')
-
     // --- Tooling ---
     ..addFlag('fastlane', help: 'fastlane lanes for Play and the App Store.')
     ..addFlag('github-workflow', help: 'GitHub Actions release workflow.')
     ..addFlag('screenshots', help: 'Store-screenshot integration test harness.')
-
     // --- Signing ---
     ..addOption(
       'keystore-alias',
       help: 'Generate a release keystore with this alias.',
     )
     ..addOption('keystore-password', help: 'Keystore password (min 6 chars).')
-    ..addOption('key-password', help: 'Key password. Defaults to the keystore one.')
+    ..addOption(
+      'key-password',
+      help: 'Key password. Defaults to the keystore one.',
+    )
     ..addOption('keystore-dname', help: 'X.500 name passed to keytool.');
 }
 

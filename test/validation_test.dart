@@ -8,15 +8,11 @@ import 'package:test/test.dart';
 /// about. `year` is fixed so nothing depends on the wall clock.
 AppSpec specOf(SpecInput input) => resolveSpec(input, year: 2026);
 
-List<String> errorFields(AppSpec spec) => validateSpec(spec)
-    .where((i) => i.isError)
-    .map((i) => i.field)
-    .toList();
+List<String> errorFields(AppSpec spec) =>
+    validateSpec(spec).where((i) => i.isError).map((i) => i.field).toList();
 
-List<String> warningFields(AppSpec spec) => validateSpec(spec)
-    .where((i) => !i.isError)
-    .map((i) => i.field)
-    .toList();
+List<String> warningFields(AppSpec spec) =>
+    validateSpec(spec).where((i) => !i.isError).map((i) => i.field).toList();
 
 void main() {
   test('the default spec is valid', () {
@@ -26,25 +22,31 @@ void main() {
 
   group('name', () {
     test('rejects kebab-case', () {
-      expect(errorFields(specOf(const SpecInput(name: 'mero-nepali'))),
-          contains('name'));
+      expect(
+        errorFields(specOf(const SpecInput(name: 'mero-nepali'))),
+        contains('name'),
+      );
     });
 
     test('rejects a leading digit', () {
-      expect(errorFields(specOf(const SpecInput(name: '2fast'))),
-          contains('name'));
+      expect(
+        errorFields(specOf(const SpecInput(name: '2fast'))),
+        contains('name'),
+      );
     });
 
     test('rejects a Dart reserved word', () {
       expect(
-        validateSpec(specOf(const SpecInput(name: 'class'))).map((i) => i.message),
+        validateSpec(specOf(const SpecInput(name: 'class')))
+            .map((i) => i.message),
         anyElement(contains('reserved word')),
       );
     });
 
     test('rejects a name Flutter already provides', () {
       expect(
-        validateSpec(specOf(const SpecInput(name: 'test'))).map((i) => i.message),
+        validateSpec(specOf(const SpecInput(name: 'test')))
+            .map((i) => i.message),
         anyElement(contains('collides')),
       );
     });
@@ -59,14 +61,19 @@ void main() {
     });
 
     test('accepts snake_case', () {
-      expect(errorFields(specOf(const SpecInput(name: 'mero_nepali'))), isEmpty);
+      expect(
+        errorFields(specOf(const SpecInput(name: 'mero_nepali'))),
+        isEmpty,
+      );
     });
   });
 
   group('org', () {
     test('rejects a single segment', () {
-      expect(errorFields(specOf(const SpecInput(name: 'a1', org: 'popupbits'))),
-          contains('org'));
+      expect(
+        errorFields(specOf(const SpecInput(name: 'a1', org: 'popupbits'))),
+        contains('org'),
+      );
     });
 
     test('rejects a Java keyword segment', () {
@@ -94,29 +101,35 @@ void main() {
     });
 
     test('rejects the navigator shell on web', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        router: RouterKind.navigator,
-        platforms: {TargetPlatform.android, TargetPlatform.web},
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          router: RouterKind.navigator,
+          platforms: {TargetPlatform.android, TargetPlatform.web},
+        ),
+      );
       expect(errorFields(spec), contains('router'));
     });
 
     test('allows the navigator shell on mobile only', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        router: RouterKind.navigator,
-        platforms: {TargetPlatform.android, TargetPlatform.ios},
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          router: RouterKind.navigator,
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
       expect(errorFields(spec), isEmpty);
     });
 
     test('warns about the navigator shell on desktop', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        router: RouterKind.navigator,
-        platforms: {TargetPlatform.windows},
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          router: RouterKind.navigator,
+          platforms: {TargetPlatform.windows},
+        ),
+      );
       expect(errorFields(spec), isEmpty);
       expect(warningFields(spec), contains('router'));
     });
@@ -124,24 +137,28 @@ void main() {
 
   group('tabs', () {
     test('rejects more than five', () {
-      final spec = specOf(SpecInput(
-        name: 'a1',
-        tabs: [
-          for (var i = 0; i < 6; i++)
-            TabSpec(id: 'tab$i', label: 'Tab $i', icon: 'circle'),
-        ],
-      ));
+      final spec = specOf(
+        SpecInput(
+          name: 'a1',
+          tabs: [
+            for (var i = 0; i < 6; i++)
+              TabSpec(id: 'tab$i', label: 'Tab $i', icon: 'circle'),
+          ],
+        ),
+      );
       expect(errorFields(spec), contains('nav.tabs'));
     });
 
     test('rejects duplicates', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        tabs: [
-          TabSpec(id: 'home', label: 'Home', icon: 'house'),
-          TabSpec(id: 'home', label: 'Home again', icon: 'house'),
-        ],
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          tabs: [
+            TabSpec(id: 'home', label: 'Home', icon: 'house'),
+            TabSpec(id: 'home', label: 'Home again', icon: 'house'),
+          ],
+        ),
+      );
       expect(
         validateSpec(spec).map((i) => i.message),
         anyElement(contains('duplicate')),
@@ -149,10 +166,12 @@ void main() {
     });
 
     test('rejects a tab called settings, which is generated', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        tabs: [TabSpec(id: 'settings', label: 'Settings', icon: 'gear')],
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          tabs: [TabSpec(id: 'settings', label: 'Settings', icon: 'gear')],
+        ),
+      );
       expect(
         validateSpec(spec).map((i) => i.message),
         anyElement(contains('generated automatically')),
@@ -183,25 +202,28 @@ void main() {
 
   group('appwrite', () {
     test('accepts the defaults filled in by the resolver', () {
-      final spec = specOf(const SpecInput(name: 'a1', backend: Backend.appwrite));
+      final spec = specOf(
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      );
       expect(errorFields(spec), isEmpty);
       expect(spec.appwrite!.projectId, 'a1', reason: 'defaults to the name');
     });
 
     test('rejects a non-absolute endpoint', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        backend: Backend.appwrite,
-        appwriteEndpoint: 'cloud.appwrite.io/v1',
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          backend: Backend.appwrite,
+          appwriteEndpoint: 'cloud.appwrite.io/v1',
+        ),
+      );
       expect(errorFields(spec), contains('backend.endpoint'));
     });
 
     test('warns when appwrite settings are given but the backend is off', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        appwriteProjectId: 'orphan',
-      ));
+      final spec = specOf(
+        const SpecInput(name: 'a1', appwriteProjectId: 'orphan'),
+      );
       // No backend selected, so the resolver drops the config entirely.
       expect(spec.appwrite, isNull);
       expect(errorFields(spec), isEmpty);
@@ -214,51 +236,60 @@ void main() {
     });
 
     test('rejects a short password, as keytool would', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        keystoreAlias: 'a1',
-        keystoreStorePassword: 'short',
-        keystoreKeyPassword: 'short',
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          keystoreAlias: 'a1',
+          keystoreStorePassword: 'short',
+          keystoreKeyPassword: 'short',
+        ),
+      );
       expect(errorFields(spec), contains('signing.storePassword'));
     });
 
     test('reuses the store password for the key when only one is given', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        keystoreStorePassword: 'longenough',
-      ));
+      final spec = specOf(
+        const SpecInput(name: 'a1', keystoreStorePassword: 'longenough'),
+      );
       expect(spec.keystore!.keyPassword, 'longenough');
       expect(spec.keystore!.alias, 'a1');
       expect(errorFields(spec), isEmpty);
     });
 
     test('warns when signing is requested without android', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        platforms: {TargetPlatform.ios},
-        keystoreStorePassword: 'longenough',
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.ios},
+          keystoreStorePassword: 'longenough',
+        ),
+      );
       expect(warningFields(spec), contains('signing'));
     });
   });
 
   group('derived values', () {
     test('applicationId joins org and name', () {
-      expect(specOf(const SpecInput(name: 'tipot')).applicationId,
-          'com.popupbits.tipot');
+      expect(
+        specOf(const SpecInput(name: 'tipot')).applicationId,
+        'com.popupbits.tipot',
+      );
     });
 
     test('pascalName handles snake_case', () {
-      expect(specOf(const SpecInput(name: 'mero_nepali')).pascalName,
-          'MeroNepali');
+      expect(
+        specOf(const SpecInput(name: 'mero_nepali')).pascalName,
+        'MeroNepali',
+      );
     });
 
     test('flutterCreatePlatforms is stably ordered', () {
-      final spec = specOf(const SpecInput(
-        name: 'a1',
-        platforms: {TargetPlatform.web, TargetPlatform.android},
-      ));
+      final spec = specOf(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.web, TargetPlatform.android},
+        ),
+      );
       expect(spec.flutterCreatePlatforms, 'android,web');
     });
 

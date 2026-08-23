@@ -7,8 +7,7 @@ import '../spec/validation.dart';
 /// against: enum values come from the same tables the parser uses, so the
 /// schema cannot describe an option beej does not accept.
 String specJsonSchema() {
-  String list(Iterable<String> values) =>
-      values.map((v) => '"$v"').join(', ');
+  String list(Iterable<String> values) => values.map((v) => '"$v"').join(', ');
 
   return '''
 {

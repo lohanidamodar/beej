@@ -53,12 +53,7 @@ const _knownAboutKeys = {
   'legalese',
 };
 const _knownToolingKeys = {'fastlane', 'githubWorkflow', 'screenshots'};
-const _knownSigningKeys = {
-  'alias',
-  'storePassword',
-  'keyPassword',
-  'dname',
-};
+const _knownSigningKeys = {'alias', 'storePassword', 'keyPassword', 'dname'};
 const _knownTabKeys = {'id', 'label', 'icon'};
 
 /// Parse a beej spec file into a partial input.
@@ -139,12 +134,21 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
     org: _stringOrNull(doc['org'], 'org', source),
     platforms: _parsePlatforms(doc['platforms'], source),
     backend: backend,
-    appwriteEndpoint:
-        _stringOrNull(backendMap?['endpoint'], 'backend.endpoint', source),
-    appwriteProjectId:
-        _stringOrNull(backendMap?['projectId'], 'backend.projectId', source),
-    appwriteDatabaseId:
-        _stringOrNull(backendMap?['databaseId'], 'backend.databaseId', source),
+    appwriteEndpoint: _stringOrNull(
+      backendMap?['endpoint'],
+      'backend.endpoint',
+      source,
+    ),
+    appwriteProjectId: _stringOrNull(
+      backendMap?['projectId'],
+      'backend.projectId',
+      source,
+    ),
+    appwriteDatabaseId: _stringOrNull(
+      backendMap?['databaseId'],
+      'backend.databaseId',
+      source,
+    ),
     router: _enumValue(
       TargetPlatformParsers.routers,
       _stringOrNull(doc['router'], 'router', source),
@@ -172,25 +176,37 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
       source,
     ),
     icons: icons,
-    inAppUpdate:
-        _boolOrNull(featuresMap?['inAppUpdate'], 'features.inAppUpdate', source),
+    inAppUpdate: _boolOrNull(
+      featuresMap?['inAppUpdate'],
+      'features.inAppUpdate',
+      source,
+    ),
     notifications: _boolOrNull(
       featuresMap?['notifications'],
       'features.notifications',
       source,
     ),
-    nepaliDates:
-        _boolOrNull(featuresMap?['nepaliDates'], 'features.nepaliDates', source),
+    nepaliDates: _boolOrNull(
+      featuresMap?['nepaliDates'],
+      'features.nepaliDates',
+      source,
+    ),
     review: _boolOrNull(featuresMap?['review'], 'features.review', source),
     privacyPolicyUrl: _stringOrNull(
       aboutMap?['privacyPolicyUrl'],
       'about.privacyPolicyUrl',
       source,
     ),
-    moreAppsUrl:
-        _stringOrNull(aboutMap?['moreAppsUrl'], 'about.moreAppsUrl', source),
-    supportEmail:
-        _stringOrNull(aboutMap?['supportEmail'], 'about.supportEmail', source),
+    moreAppsUrl: _stringOrNull(
+      aboutMap?['moreAppsUrl'],
+      'about.moreAppsUrl',
+      source,
+    ),
+    supportEmail: _stringOrNull(
+      aboutMap?['supportEmail'],
+      'about.supportEmail',
+      source,
+    ),
     legalese: _stringOrNull(aboutMap?['legalese'], 'about.legalese', source),
     fastlane: _boolOrNull(toolingMap?['fastlane'], 'tooling.fastlane', source),
     githubWorkflow: _boolOrNull(
@@ -198,8 +214,11 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
       'tooling.githubWorkflow',
       source,
     ),
-    screenshots:
-        _boolOrNull(toolingMap?['screenshots'], 'tooling.screenshots', source),
+    screenshots: _boolOrNull(
+      toolingMap?['screenshots'],
+      'tooling.screenshots',
+      source,
+    ),
     keystoreAlias: _stringOrNull(signingMap?['alias'], 'signing.alias', source),
     keystoreStorePassword: _stringOrNull(
       signingMap?['storePassword'],
@@ -218,16 +237,12 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
 /// The enum wire-name tables, shared by the YAML parser and the flag parser so
 /// `--router=go_router` and `router: go_router` accept exactly the same set.
 abstract final class TargetPlatformParsers {
-  static final platforms = {
-    for (final v in TargetPlatform.values) v.wire: v,
-  };
+  static final platforms = {for (final v in TargetPlatform.values) v.wire: v};
   static final backends = {for (final v in Backend.values) v.wire: v};
   static final routers = {for (final v in RouterKind.values) v.wire: v};
   static final navStyles = {for (final v in NavStyle.values) v.wire: v};
   static final databases = {for (final v in DatabaseKind.values) v.wire: v};
-  static final designSystems = {
-    for (final v in DesignSystem.values) v.wire: v,
-  };
+  static final designSystems = {for (final v in DesignSystem.values) v.wire: v};
   static final iconSets = {for (final v in IconSet.values) v.wire: v};
 }
 
@@ -264,13 +279,15 @@ List<TabSpec>? _parseTabs(dynamic value, IconSet? icons, String source) {
   final tabs = <TabSpec>[];
   for (final entry in value) {
     if (entry is String) {
-      tabs.add(TabSpec(
-        id: entry,
-        label: titleizeTabId(entry),
-        icon: useMaterial
-            ? defaultMaterialIcon(entry)
-            : defaultPiconsIcon(entry),
-      ));
+      tabs.add(
+        TabSpec(
+          id: entry,
+          label: titleizeTabId(entry),
+          icon: useMaterial
+              ? defaultMaterialIcon(entry)
+              : defaultPiconsIcon(entry),
+        ),
+      );
       continue;
     }
     if (entry is! Map) {
@@ -285,13 +302,17 @@ List<TabSpec>? _parseTabs(dynamic value, IconSet? icons, String source) {
       throw SpecParseException('$source: a nav.tabs entry is missing "id"');
     }
     final icon = _stringOrNull(entry['icon'], 'nav.tabs[].icon', source);
-    tabs.add(TabSpec(
-      id: id,
-      label: _stringOrNull(entry['label'], 'nav.tabs[].label', source) ??
-          titleizeTabId(id),
-      icon: icon ??
-          (useMaterial ? defaultMaterialIcon(id) : defaultPiconsIcon(id)),
-    ));
+    tabs.add(
+      TabSpec(
+        id: id,
+        label:
+            _stringOrNull(entry['label'], 'nav.tabs[].label', source) ??
+            titleizeTabId(id),
+        icon:
+            icon ??
+            (useMaterial ? defaultMaterialIcon(id) : defaultPiconsIcon(id)),
+      ),
+    );
   }
   return tabs;
 }
@@ -325,9 +346,7 @@ List<String>? _parseStringList(dynamic value, String field, String source) {
   if (value is! List) {
     throw SpecParseException('$source: $field must be a list');
   }
-  return [
-    for (final entry in value) _stringOrNull(entry, '$field[]', source)!,
-  ];
+  return [for (final entry in value) _stringOrNull(entry, '$field[]', source)!];
 }
 
 T? _enumValue<T>(
@@ -369,7 +388,10 @@ String? _closest(String input, Set<String> candidates) {
   String? best;
   var bestDistance = 3;
   for (final candidate in candidates) {
-    final distance = _editDistance(input.toLowerCase(), candidate.toLowerCase());
+    final distance = _editDistance(
+      input.toLowerCase(),
+      candidate.toLowerCase(),
+    );
     if (distance < bestDistance) {
       bestDistance = distance;
       best = candidate;

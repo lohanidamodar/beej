@@ -20,10 +20,7 @@ class AppwriteBrick extends Brick {
 
   @override
   List<TemplateFile> files(AppSpec spec) => const [
-    TemplateFile(
-      'appwrite/client.dart.tmpl',
-      'lib/core/appwrite/client.dart',
-    ),
+    TemplateFile('appwrite/client.dart.tmpl', 'lib/core/appwrite/client.dart'),
     TemplateFile(
       'appwrite/failures.dart.tmpl',
       'lib/core/appwrite/failures.dart',

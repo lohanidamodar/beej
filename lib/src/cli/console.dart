@@ -8,9 +8,9 @@ import 'package:io/ansi.dart' as ansi;
 /// to a file or a CI log produces clean text.
 class Console {
   Console({IOSink? out, IOSink? err, bool? useColor})
-      : _out = out ?? stdout,
-        _err = err ?? stderr,
-        _color = useColor ?? _detectColor();
+    : _out = out ?? stdout,
+      _err = err ?? stderr,
+      _color = useColor ?? _detectColor();
 
   final IOSink _out;
   final IOSink _err;
