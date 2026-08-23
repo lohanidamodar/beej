@@ -108,6 +108,7 @@ class SqfliteBrick extends Brick {
       'sqflite/v1_initial.sql.tmpl',
       'lib/core/db/migrations/v1_initial.sql',
     ),
+    TemplateFile('sqflite/database_test.dart.tmpl', 'test/database_test.dart'),
   ];
 
   @override
@@ -123,6 +124,15 @@ class SqfliteBrick extends Brick {
       ),
     PubDep.hosted('path', Versions.path),
     PubDep.hosted('path_provider', Versions.pathProvider),
+  ];
+
+  @override
+  List<PubDep> devDependencies(AppSpec spec) => [
+    // Needed even on mobile-only apps: `flutter test` runs on the host, which
+    // has no bundled SQLite, and test/database_test.dart is what catches a
+    // malformed migration before a device does.
+    if (!spec.hasDesktop)
+      PubDep.hosted('sqflite_common_ffi', Versions.sqfliteCommonFfi),
   ];
 
   /// The `.sql` files are loaded through `rootBundle`, so they have to ship as
