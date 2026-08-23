@@ -9,6 +9,9 @@ import '../../core/router/navigation.dart';
 import '../../core/router/routes.dart';
 import '../../core/ui/feedback.dart';
 import '../../core/util/launcher.dart';
+{{#review}}
+import '../../core/util/review_prompt.dart';
+{{/review}}
 import '../../l10n/app_localizations.dart';
 {{#appwrite}}
 import '../auth/auth_controller.dart';
@@ -88,7 +91,14 @@ List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
           leading: const Icon({{iconRate}}),
           title: Text(l10n.aboutRate),
           subtitle: Text(l10n.aboutRateSubtitle),
+{{#review}}
+          // Deliberate tap, so fall back to the store listing when the
+          // platform declines to show its sheet.
+          onTap: () => ReviewPrompt.request(),
+{{/review}}
+{{^review}}
           onTap: () => Launcher.openStoreListing(),
+{{/review}}
         ),
         ListTile(
           leading: const Icon({{iconMoreApps}}),

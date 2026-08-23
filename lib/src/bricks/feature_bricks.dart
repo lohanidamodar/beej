@@ -86,6 +86,14 @@ class ReviewBrick extends Brick {
   bool appliesTo(AppSpec spec) => spec.features.review;
 
   @override
+  List<TemplateFile> files(AppSpec spec) => const [
+    TemplateFile(
+      'review/review_prompt.dart.tmpl',
+      'lib/core/util/review_prompt.dart',
+    ),
+  ];
+
+  @override
   List<PubDep> dependencies(AppSpec spec) => [
     PubDep.hosted(
       'in_app_review',
@@ -110,6 +118,14 @@ class NepaliDatesBrick extends Brick {
 
   @override
   bool appliesTo(AppSpec spec) => spec.features.nepaliDates;
+
+  @override
+  List<TemplateFile> files(AppSpec spec) => const [
+    TemplateFile(
+      'nepali_dates/nepali_date.dart.tmpl',
+      'lib/core/util/nepali_date.dart',
+    ),
+  ];
 
   @override
   List<PubDep> dependencies(AppSpec spec) => [

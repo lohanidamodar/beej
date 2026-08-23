@@ -1,0 +1,65 @@
+import 'package:material_ui/material_ui.dart';
+// Pulls in frozen Material internally, which MaterialUiCompatibilityBridge in
+// core/app.dart already covers. The wrapper below deliberately exposes none of
+// its Material types, so this file stays clean of the frozen library.
+import 'package:nepali_date_picker/nepali_date_picker.dart' as ndp;
+import 'package:nepali_utils/nepali_utils.dart';
+
+/// Bikram Sambat dates.
+///
+/// BS is the official calendar in Nepal, so a date shown to a Nepali user
+/// often needs to be in BS rather than Gregorian. Month lengths vary year to
+/// year and follow no formula — `nepali_utils` carries the lookup tables, and
+/// nothing here should try to compute a conversion by hand.
+abstract final class NepaliDate {
+  /// Gregorian to Bikram Sambat.
+  static NepaliDateTime fromAd(DateTime date) => date.toNepaliDateTime();
+
+  /// Bikram Sambat to Gregorian.
+  static DateTime toAd(NepaliDateTime date) => date.toDateTime();
+
+  /// Today in BS.
+  static NepaliDateTime today() => NepaliDateTime.now();
+
+  /// Format a BS date, e.g. `२०८२ भदौ ८` in Nepali or `2082 Bhadra 8`.
+  ///
+  /// [inNepali] switches both the language and the numerals: Devanagari digits
+  /// are what a Nepali reader expects alongside Nepali month names, and mixing
+  /// the two looks like a bug.
+  static String format(
+    NepaliDateTime date, {
+    String pattern = 'yyyy MMMM d',
+    bool inNepali = true,
+  }) {
+    NepaliUtils(inNepali ? Language.nepali : Language.english);
+    return NepaliDateFormat(pattern).format(date);
+  }
+
+  /// Format a Gregorian date as BS in one step.
+  static String formatAd(
+    DateTime date, {
+    String pattern = 'yyyy MMMM d',
+    bool inNepali = true,
+  }) => format(fromAd(date), pattern: pattern, inNepali: inNepali);
+
+  /// Show the platform-appropriate BS date picker.
+  ///
+  /// Returns null when dismissed. Defaults span 1970–2100 BS, which is the
+  /// full range the picker supports — it asserts outside it.
+  static Future<NepaliDateTime?> pick(
+    BuildContext context, {
+    NepaliDateTime? initialDate,
+    NepaliDateTime? firstDate,
+    NepaliDateTime? lastDate,
+    bool inNepali = true,
+  }) {
+    final initial = initialDate ?? today();
+    return ndp.showAdaptiveDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate ?? NepaliDateTime(1970),
+      lastDate: lastDate ?? NepaliDateTime(2100),
+      language: inNepali ? Language.nepali : Language.english,
+    );
+  }
+}
