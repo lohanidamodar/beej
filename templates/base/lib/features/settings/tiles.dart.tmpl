@@ -61,7 +61,9 @@ List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
               confirmLabel: l10n.authSignOut,
               isDestructive: true,
             );
-            if (confirmed) await ref.read(authControllerProvider.notifier).signOut();
+            if (confirmed) {
+              await ref.read(authControllerProvider.notifier).signOut();
+            }
           },
         ),
       ],

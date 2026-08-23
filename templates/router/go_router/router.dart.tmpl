@@ -41,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return location == Routes.splash ? null : Routes.splash;
       }
 
-      final signedIn = auth.valueOrNull != null;
+      final signedIn = auth.value != null;
       final onAuthScreen =
           location == Routes.signIn || location == Routes.signUp;
 

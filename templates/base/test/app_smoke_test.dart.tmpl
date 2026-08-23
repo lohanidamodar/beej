@@ -3,8 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:{{name}}/core/app.dart';
 import 'package:{{name}}/core/settings/settings_controller.dart';
+{{#appwrite}}
+import 'package:appwrite/models.dart' as models;
+import 'package:{{name}}/features/auth/auth_controller.dart';
+{{/appwrite}}
 
-/// The app builds, routes to its first screen, and renders.
+/// The app builds, routes to its first screen, and renders without throwing.
 ///
 /// Deliberately shallow. Its job is to fail loudly when a change breaks
 /// startup — a missing provider override, a bad route table, a theme that
@@ -18,7 +22,12 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(preferences),
+{{#appwrite}}
+          authControllerProvider.overrideWith(_SignedOutAuthController.new),
+{{/appwrite}}
+        ],
         child: const {{pascalName}}App(),
       ),
     );
@@ -27,3 +36,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
+{{#appwrite}}
+
+/// Reports "signed out" without touching the network.
+///
+/// The real controller calls `account.get()` from `build()`, and Flutter's
+/// test HTTP client answers every request with a 400. Without this override
+/// the test would be asserting on a network failure rather than on the app.
+class _SignedOutAuthController extends AuthController {
+  @override
+  Future<models.User?> build() async => null;
+}
+{{/appwrite}}

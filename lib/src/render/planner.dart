@@ -28,6 +28,7 @@ class Planner {
     final removals = <String>{};
     final dependencies = <PubDep>[];
     final devDependencies = <PubDep>[];
+    final dependencyOverrides = <PubDep>[];
     final assetDirs = <String>{};
 
     for (final brick in active) {
@@ -64,6 +65,7 @@ class Planner {
       removals.addAll(brick.removes(spec));
       dependencies.addAll(brick.dependencies(spec));
       devDependencies.addAll(brick.devDependencies(spec));
+      dependencyOverrides.addAll(brick.dependencyOverrides(spec));
       assetDirs.addAll(brick.assetDirs(spec));
     }
 
@@ -73,6 +75,7 @@ class Planner {
       spec: spec,
       dependencies: _dedupe(dependencies),
       devDependencies: _dedupe(devDependencies),
+      dependencyOverrides: _dedupe(dependencyOverrides),
       assetDirs: assetDirs.toList()..sort(),
       generateL10n: true,
     );
@@ -89,6 +92,7 @@ class Planner {
       removals: removals.toList()..sort(),
       dependencies: _dedupe(dependencies),
       devDependencies: _dedupe(devDependencies),
+      dependencyOverrides: _dedupe(dependencyOverrides),
       assetDirs: assetDirs.toList()..sort(),
       activeBrickIds: active.map((b) => b.id).toList(),
     );

@@ -32,6 +32,7 @@ class FilePlan {
     required this.removals,
     required this.dependencies,
     required this.devDependencies,
+    required this.dependencyOverrides,
     required this.assetDirs,
     required this.activeBrickIds,
   });
@@ -43,6 +44,7 @@ class FilePlan {
 
   final List<PubDep> dependencies;
   final List<PubDep> devDependencies;
+  final List<PubDep> dependencyOverrides;
   final List<String> assetDirs;
   final List<String> activeBrickIds;
 

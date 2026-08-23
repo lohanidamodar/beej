@@ -1,0 +1,52 @@
+import 'package:sqflite/sqflite.dart';
+
+/// Current schema version. Bump this when you add a migration.
+const int kSchemaVersion = 1;
+
+/// One migration step.
+///
+/// SQL-only steps live in `lib/core/db/migrations/vN_*.sql` and are declared
+/// with [SqlMigration]. A step that needs real logic — backfilling a column
+/// from parsed data, say — uses [CodeMigration] instead, so Dart and SQL can
+/// interleave in version order rather than one being forced through the other.
+sealed class Migration {
+  const Migration();
+
+  Future<void> run(Database db, Future<String> Function(String) loadAsset);
+}
+
+class SqlMigration extends Migration {
+  const SqlMigration(this.assetPath);
+
+  final String assetPath;
+
+  @override
+  Future<void> run(
+    Database db,
+    Future<String> Function(String) loadAsset,
+  ) async {
+    final script = await loadAsset(assetPath);
+    // sqflite's execute() takes one statement, so a multi-statement file is
+    // split here. Semicolons inside string literals would break this — keep
+    // migration SQL to plain DDL.
+    for (final statement in script.split(';')) {
+      final trimmed = statement.trim();
+      if (trimmed.isEmpty) continue;
+      await db.execute(trimmed);
+    }
+  }
+}
+
+class CodeMigration extends Migration {
+  const CodeMigration(this.apply);
+
+  final Future<void> Function(Database db) apply;
+
+  @override
+  Future<void> run(Database db, Future<String> Function(String) _) => apply(db);
+}
+
+/// Migrations in order. Index N takes the schema from version N to N+1.
+const List<Migration> migrations = <Migration>[
+  SqlMigration('lib/core/db/migrations/v1_initial.sql'),
+];

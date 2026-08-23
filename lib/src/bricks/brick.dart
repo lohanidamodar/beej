@@ -58,6 +58,13 @@ abstract class Brick {
   /// Dev dependencies added to `pubspec.yaml`.
   List<PubDep> devDependencies(AppSpec spec) => const [];
 
+  /// Entries for `dependency_overrides`.
+  ///
+  /// A last resort — it silently overrules another package's stated
+  /// constraint. Every entry must carry a comment justifying why the override
+  /// is safe for the API surface actually used.
+  List<PubDep> dependencyOverrides(AppSpec spec) => const [];
+
   /// Asset directories this brick needs declared under `flutter: assets:`.
   List<String> assetDirs(AppSpec spec) => const [];
 

@@ -11,6 +11,7 @@ String writePubspec({
   required AppSpec spec,
   required List<PubDep> dependencies,
   required List<PubDep> devDependencies,
+  required List<PubDep> dependencyOverrides,
   required List<String> assetDirs,
   required bool generateL10n,
 }) {
@@ -32,6 +33,19 @@ String writePubspec({
     ..writeln()
     ..writeln('dev_dependencies:');
   _writeDeps(buffer, devDependencies);
+
+  if (dependencyOverrides.isNotEmpty) {
+    buffer
+      ..writeln()
+      ..writeln(
+        '# Overrides constraints declared by other packages. Each entry',
+      )
+      ..writeln(
+        '# explains why it is safe for the API surface actually used.',
+      )
+      ..writeln('dependency_overrides:');
+    _writeDeps(buffer, dependencyOverrides);
+  }
 
   buffer
     ..writeln()
@@ -83,7 +97,7 @@ void _writeDeps(StringBuffer buffer, List<PubDep> deps) {
       if (dep.gitRef != null) buffer.writeln('      ref: ${dep.gitRef}');
       if (dep.gitPath != null) buffer.writeln('      path: ${dep.gitPath}');
     } else {
-      buffer.writeln('  ${dep.name}: ${dep.constraint}');
+      buffer.writeln('  ${dep.name}: ${_constraint(dep.constraint!)}');
     }
   }
 }
@@ -114,6 +128,18 @@ List<String> _wrapComment(String text, {required String indent}) {
     if (current.isNotEmpty) lines.add('$indent# $current');
   }
   return lines;
+}
+
+/// Quote a version constraint when YAML would misread it.
+///
+/// A range like `>=9.0.0 <11.0.0` is a plain scalar containing a space and a
+/// leading `>`, which YAML reads as a folded block. Carets are safe bare.
+String _constraint(String value) {
+  final needsQuotes = value.contains(' ') ||
+      value.startsWith('>') ||
+      value.startsWith('<') ||
+      value.startsWith('=');
+  return needsQuotes ? "'$value'" : value;
 }
 
 /// Quote a YAML scalar when it needs it. Descriptions routinely contain a

@@ -1,3 +1,4 @@
+import 'backend_bricks.dart';
 import 'base_brick.dart';
 import 'brick.dart';
 import 'feature_bricks.dart';
@@ -12,6 +13,8 @@ const List<Brick> allBricks = <Brick>[
   BaseBrick(),
   GoRouterBrick(),
   NavigatorBrick(),
+  AppwriteBrick(),
+  SqfliteBrick(),
   PiconsBrick(),
   InAppUpdateBrick(),
   ReviewBrick(),
