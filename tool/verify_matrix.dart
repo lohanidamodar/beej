@@ -131,6 +131,15 @@ final matrix = <MatrixCase>[
     why: 'the shared popup_bits_design theme, which needs material_ui 1.x',
   ),
   MatrixCase(
+    'no_agent_config',
+    const SpecInput(
+      name: 'no_agent_config_app',
+      agentConfig: false,
+      platforms: {TargetPlatform.android},
+    ),
+    why: 'the agent-tooling brick fully off, .mcp.json and skills absent',
+  ),
+  MatrixCase(
     'desktop',
     const SpecInput(
       name: 'desktop_app',

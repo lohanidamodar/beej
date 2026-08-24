@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:beej/src/bricks/brick.dart';
 import 'package:beej/src/bricks/registry.dart';
 import 'package:beej/src/render/file_plan.dart';
@@ -43,6 +45,9 @@ final coveringSpecs = <AppSpec>[
   ),
   specOf(const SpecInput(name: 'a1', designSystem: DesignSystem.popupBits)),
   specOf(const SpecInput(name: 'a1', locales: ['en'])),
+  // Agent config off, so the brick's absence is covered as well as its
+  // presence — an always-on brick hides bugs in the "off" path.
+  specOf(const SpecInput(name: 'a1', agentConfig: false)),
 ];
 
 /// Paths the plan writes, for readable set assertions.
@@ -377,6 +382,97 @@ void main() {
       expect(pubspec, contains('name: a1'));
       // A description containing ": " must be quoted or it becomes a mapping.
       expect(pubspec, contains('description: "Has: a colon'));
+    });
+  });
+
+  group('agent tooling', () {
+    test('a default project gets .mcp.json and every skill', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      expect(pathsOf(plan), contains('.mcp.json'));
+      for (final skill in SkillKind.values) {
+        expect(
+          pathsOf(plan),
+          contains('.claude/skills/${skill.wire}/SKILL.md'),
+          reason: '${skill.wire} missing',
+        );
+      }
+    });
+
+    test('.mcp.json is valid JSON with appwrite off', () async {
+      // The appwrite entry is comma-separated inside the object, so the
+      // off-state is exactly where a trailing comma would break the file.
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final parsed =
+          jsonDecode(contentOf(plan, '.mcp.json')) as Map<String, dynamic>;
+      expect((parsed['mcpServers'] as Map).keys, ['dart']);
+    });
+
+    test('.mcp.json is valid JSON with appwrite on', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      );
+      final parsed =
+          jsonDecode(contentOf(plan, '.mcp.json')) as Map<String, dynamic>;
+      expect((parsed['mcpServers'] as Map).keys, ['dart', 'appwrite']);
+      // Hosted + browser OAuth: no credential may be written into the repo.
+      expect(contentOf(plan, '.mcp.json'), isNot(contains('key')));
+    });
+
+    test('skills can be narrowed', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', skills: [SkillKind.materialUi]),
+      );
+      expect(pathsOf(plan), contains('.claude/skills/material-ui/SKILL.md'));
+      expect(
+        pathsOf(plan).where((p) => p.contains('store-readiness')),
+        isEmpty,
+      );
+    });
+
+    test('agentConfig false removes both mcp and skills', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', agentConfig: false),
+      );
+      expect(pathsOf(plan), isNot(contains('.mcp.json')));
+      expect(pathsOf(plan).where((p) => p.startsWith('.claude/')), isEmpty);
+    });
+
+    test('naming skills does not resurrect a disabled agent config', () async {
+      // --no-agent-config should win outright rather than half-applying.
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          agentConfig: false,
+          skills: [SkillKind.materialUi],
+        ),
+      );
+      expect(pathsOf(plan).where((p) => p.startsWith('.claude/')), isEmpty);
+    });
+
+    test('every skill ships a SKILL.md with frontmatter', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      for (final skill in SkillKind.values) {
+        final content = contentOf(
+          plan,
+          '.claude/skills/${skill.wire}/SKILL.md',
+        );
+        expect(content, startsWith('---\n'), reason: skill.wire);
+        expect(content, contains('name: ${skill.wire}'), reason: skill.wire);
+        expect(content, contains('description:'), reason: skill.wire);
+      }
+    });
+
+    test('skills are copied verbatim, not rendered', () async {
+      // They are general-purpose prose; binding them to one project's values
+      // would make the copy wrong for the next project.
+      final plan = await planFor(
+        const SpecInput(name: 'a1', displayName: 'Zebra'),
+      );
+      final content = contentOf(
+        plan,
+        '.claude/skills/store-readiness/SKILL.md',
+      );
+      expect(content, isNot(contains('Zebra')));
     });
   });
 

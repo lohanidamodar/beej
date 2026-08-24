@@ -100,6 +100,16 @@ void addCreateFlags(ArgParser parser) {
     ..addFlag('fastlane', help: 'fastlane lanes for Play and the App Store.')
     ..addFlag('github-workflow', help: 'GitHub Actions release workflow.')
     ..addFlag('screenshots', help: 'Store-screenshot integration test harness.')
+    // --- Agent tooling ---
+    ..addFlag(
+      'agent-config',
+      help: 'Write .mcp.json and copy agent skills into the project.',
+    )
+    ..addOption(
+      'skills',
+      help: 'Comma-separated skills to copy, or "all" / "none".',
+      valueHelp: 'store-readiness,material-ui',
+    )
     // --- Signing ---
     ..addOption(
       'keystore-alias',
@@ -156,6 +166,8 @@ SpecInput readFlagInput(ArgResults results) {
     fastlane: flag('fastlane'),
     githubWorkflow: flag('github-workflow'),
     screenshots: flag('screenshots'),
+    agentConfig: flag('agent-config'),
+    skills: _parseSkills(option('skills')),
     keystoreAlias: option('keystore-alias'),
     keystoreStorePassword: option('keystore-password'),
     keystoreKeyPassword: option('key-password'),
@@ -190,6 +202,25 @@ Set<TargetPlatform>? _parsePlatforms(String? value) {
       );
     }
     result.add(platform);
+  }
+  return result;
+}
+
+List<SkillKind>? _parseSkills(String? value) {
+  if (value == null) return null;
+  if (value == 'none') return const [];
+  if (value == 'all') return SkillKind.values;
+  final table = {for (final s in SkillKind.values) s.wire: s};
+  final result = <SkillKind>[];
+  for (final name in _splitCsv(value)!) {
+    final skill = table[name];
+    if (skill == null) {
+      throw FormatException(
+        'unknown skill "$name" — expected some of ${table.keys.join(', ')}, '
+        'or "all"/"none"',
+      );
+    }
+    if (!result.contains(skill)) result.add(skill);
   }
   return result;
 }

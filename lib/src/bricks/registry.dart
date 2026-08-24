@@ -1,3 +1,4 @@
+import 'agent_bricks.dart';
 import 'backend_bricks.dart';
 import 'base_brick.dart';
 import 'brick.dart';
@@ -28,4 +29,5 @@ const List<Brick> allBricks = <Brick>[
   FastlaneBrick(),
   GithubWorkflowBrick(),
   ScreenshotsBrick(),
+  AgentConfigBrick(),
 ];

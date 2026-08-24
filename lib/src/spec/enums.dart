@@ -69,6 +69,30 @@ enum DesignSystem {
   final String wire;
 }
 
+/// A project-scoped skill beej can copy into a generated app.
+///
+/// These are vendored copies, not links: a generated repo has to work when
+/// opened on its own, by a teammate or a CI agent who has none of this user's
+/// personal configuration.
+enum SkillKind {
+  /// The org's Play / App Store submission audit.
+  storeReadiness('store-readiness'),
+
+  /// Mobile UI/UX review — hierarchy, spacing, touch targets, states.
+  mobileUiDesign('mobile-ui-design'),
+
+  /// The frozen-vs-modern Material rules, the bridge, and the failures that
+  /// pass `flutter analyze`.
+  materialUi('material-ui');
+
+  const SkillKind(this.wire);
+
+  final String wire;
+
+  /// Directory under `templates/skills/`.
+  String get templateDir => 'skills/$wire';
+}
+
 enum IconSet {
   picons('picons'),
   material('material');

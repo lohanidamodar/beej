@@ -1,0 +1,41 @@
+# Agent tooling
+
+`.mcp.json` in the project root declares the MCP servers an agent gets when it
+opens this repo. Project-scoped, so it travels with the code — a teammate or a
+CI agent gets the same tools without configuring anything.
+
+## dart
+
+Ships **inside the Dart SDK** (`dart mcp-server`), so there is nothing to
+install and nothing to keep up to date separately.
+
+It is the difference between an agent reasoning about this app and actually
+running it: `analyze_files`, `run_tests`, `hot_reload`, `hot_restart`,
+`launch_app`, `list_devices`, `get_runtime_errors`, `widget_inspector`,
+`pub`, `pub_dev_search`.
+
+Worth knowing: two of the worst `material_ui` failure modes — losing route
+transitions, and a theme silently falling back — pass `flutter analyze` and
+fail only when the app runs. Being able to launch it and read its runtime
+errors is what catches those.
+{{#appwrite}}
+
+## appwrite
+
+The hosted server at `https://mcp.appwrite.io/`, authenticated in the browser
+the first time it is used. **No API key is stored in this repo**, which is why
+it is safe to commit this file.
+
+Exposes databases, users, functions, teams and storage for the Appwrite
+project, plus documentation search.
+
+In Claude Code, run `/mcp`, pick `appwrite`, and approve the scopes.
+{{/appwrite}}
+
+## Skills
+
+`.claude/skills/` holds skills scoped to this project. They load on demand when
+a task matches their description, rather than sitting in the context window.
+
+These are **copies**, generated with the project. They do not update themselves.
+If one is wrong or out of date, fix it here — this repo owns it now.

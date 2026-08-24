@@ -75,6 +75,20 @@ class AboutConfig {
   final String legalese;
 }
 
+/// Tooling for the coding agents that will work in the generated repo.
+class AgentConfig {
+  const AgentConfig({this.mcp = true, this.skills = const []});
+
+  /// Write `.mcp.json` declaring the Dart MCP server (and Appwrite's, when
+  /// that backend is on).
+  final bool mcp;
+
+  /// Skills copied into `.claude/skills/`.
+  final List<SkillKind> skills;
+
+  bool get isEmpty => !mcp && skills.isEmpty;
+}
+
 /// Repo-level scaffolding that is not app code.
 class Tooling {
   const Tooling({
@@ -133,6 +147,7 @@ class AppSpec {
     required this.features,
     required this.about,
     required this.tooling,
+    required this.agents,
     required this.keystore,
   });
 
@@ -162,6 +177,7 @@ class AppSpec {
   final Features features;
   final AboutConfig about;
   final Tooling tooling;
+  final AgentConfig agents;
   final KeystoreConfig? keystore;
 
   // --- Derived values -------------------------------------------------
@@ -231,6 +247,7 @@ class AppSpec {
     Features? features,
     AboutConfig? about,
     Tooling? tooling,
+    AgentConfig? agents,
     KeystoreConfig? keystore,
   }) {
     return AppSpec(
@@ -251,6 +268,7 @@ class AppSpec {
       features: features ?? this.features,
       about: about ?? this.about,
       tooling: tooling ?? this.tooling,
+      agents: agents ?? this.agents,
       keystore: keystore ?? this.keystore,
     );
   }

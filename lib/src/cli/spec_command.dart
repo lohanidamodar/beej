@@ -105,6 +105,13 @@ tooling:
   githubWorkflow: true
   screenshots: true
 
+# Tooling for coding agents working in the generated repo. On by default.
+agents:
+  mcp: true                     # writes .mcp.json (dart, + appwrite when on)
+  # "all" (default), "none", or a list of:
+  #   store-readiness, mobile-ui-design, material-ui
+  skills: all
+
 # Omit this block entirely to skip keystore generation.
 # signing:
 #   alias: tipot

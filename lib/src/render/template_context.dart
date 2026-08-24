@@ -86,6 +86,11 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'fastlane': spec.tooling.fastlane,
     'githubWorkflow': spec.tooling.githubWorkflow,
     'screenshots': spec.tooling.screenshots,
+    'mcp': spec.agents.mcp,
+    'hasSkills': spec.agents.skills.isNotEmpty,
+    'skills': [
+      for (final skill in spec.agents.skills) {'name': skill.wire},
+    ],
     'signing': spec.keystore != null,
     'keystoreAlias': spec.keystore?.alias ?? '',
     'keystoreStorePassword': spec.keystore?.storePassword ?? '',

@@ -158,6 +158,26 @@ String specJsonSchema() {
         "screenshots": { "type": "boolean", "default": true }
       }
     },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Tooling for coding agents working in the generated repo. On by default.",
+      "properties": {
+        "mcp": { "type": "boolean", "default": true, "description": "Write .mcp.json declaring the Dart MCP server, plus Appwrite's hosted server when that backend is on. No credentials are written." },
+        "skills": {
+          "default": "all",
+          "description": "Skills copied into .claude/skills/ as vendored copies.",
+          "oneOf": [
+            { "type": "string", "enum": ["all", "none"] },
+            {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": [${list(SkillKind.values.map((v) => v.wire))}] }
+            }
+          ]
+        }
+      }
+    },
     "signing": {
       "type": "object",
       "additionalProperties": false,

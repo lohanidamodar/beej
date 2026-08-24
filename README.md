@@ -31,7 +31,12 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.
 - **`PROJECT.md`** as the single guide, with `CLAUDE.md` and `AGENTS.md`
-  pointing at it.
+  pointing at it — scope, workflow, conventions, the responsive contract, a
+  testing strategy and a done-checklist.
+- **Agent tooling**: `.mcp.json` declaring the Dart MCP server (it ships inside
+  the Dart SDK, so nothing to install) plus Appwrite's hosted server when that
+  backend is on, and project-scoped skills under `.claude/skills/`. Turn it all
+  off with `--no-agent-config`, or narrow it with `--skills=material-ui`.
 
 ## What you choose
 
@@ -50,6 +55,8 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 | `tooling.fastlane` | bool | true |
 | `tooling.githubWorkflow` | bool | true |
 | `tooling.screenshots` | bool | true |
+| `agents.mcp` | bool | true |
+| `agents.skills` | `all` / `none` / list | `all` |
 
 `beej bricks` lists what each contributes.
 

@@ -35,6 +35,7 @@ const _knownTopLevelKeys = {
   'features',
   'about',
   'tooling',
+  'agents',
   'signing',
 };
 
@@ -53,6 +54,7 @@ const _knownAboutKeys = {
   'legalese',
 };
 const _knownToolingKeys = {'fastlane', 'githubWorkflow', 'screenshots'};
+const _knownAgentKeys = {'mcp', 'skills'};
 const _knownSigningKeys = {'alias', 'storePassword', 'keyPassword', 'dname'};
 const _knownTabKeys = {'id', 'label', 'icon'};
 
@@ -93,6 +95,10 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
   final toolingMap = _mapOrNull(doc['tooling'], 'tooling', source);
   if (toolingMap != null) {
     _rejectUnknownKeys(toolingMap, _knownToolingKeys, source, 'tooling.');
+  }
+  final agentsMap = _mapOrNull(doc['agents'], 'agents', source);
+  if (agentsMap != null) {
+    _rejectUnknownKeys(agentsMap, _knownAgentKeys, source, 'agents.');
   }
   final signingMap = _mapOrNull(doc['signing'], 'signing', source);
   if (signingMap != null) {
@@ -219,6 +225,8 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
       'tooling.screenshots',
       source,
     ),
+    agentConfig: _boolOrNull(agentsMap?['mcp'], 'agents.mcp', source),
+    skills: _parseSkills(agentsMap?['skills'], source),
     keystoreAlias: _stringOrNull(signingMap?['alias'], 'signing.alias', source),
     keystoreStorePassword: _stringOrNull(
       signingMap?['storePassword'],
@@ -315,6 +323,30 @@ List<TabSpec>? _parseTabs(dynamic value, IconSet? icons, String source) {
     );
   }
   return tabs;
+}
+
+/// `agents.skills` accepts a list of names, or `none`/`all` as shorthands.
+List<SkillKind>? _parseSkills(dynamic value, String source) {
+  if (value == null) return null;
+  if (value is String) {
+    if (value == 'none') return const [];
+    if (value == 'all') return SkillKind.values;
+  }
+  final names = _parseStringList(value, 'agents.skills', source);
+  if (names == null) return null;
+  final table = {for (final s in SkillKind.values) s.wire: s};
+  final result = <SkillKind>[];
+  for (final name in names) {
+    final skill = table[name];
+    if (skill == null) {
+      throw SpecParseException(
+        '$source: unknown skill "$name" — expected some of '
+        '${table.keys.join(', ')}, or "all"/"none"',
+      );
+    }
+    if (!result.contains(skill)) result.add(skill);
+  }
+  return result;
 }
 
 // --- Small typed readers -------------------------------------------------

@@ -46,6 +46,7 @@ String triggerFor(String id) => switch (id) {
   'github_workflow' => 'tooling.githubWorkflow: true',
   'screenshots' => 'tooling.screenshots: true',
   'android' => 'android is a target platform',
+  'agent_config' => 'agents.mcp or agents.skills (on by default)',
   'signing' => 'a signing block is present',
   _ => '',
 };

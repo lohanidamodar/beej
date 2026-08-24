@@ -4,7 +4,35 @@
 
 One guide for humans and agents alike. `CLAUDE.md` and `AGENTS.md` point here.
 
-## 1. Stack
+## 1. Scope
+
+**In scope:** features, fixes and refactors within the structure below, with
+tests and localized strings.
+
+**Out of scope unless explicitly asked:**
+
+- Publishing, deploying, signing, or uploading builds
+- Touching secrets, keystores, `key.properties`, `.env.android`, or API keys
+- Large unrelated refactors, or an architecture rewrite
+- New packages that duplicate something the project already does
+- Committing or pushing
+
+## 2. Working here
+
+**Before changing anything** — read the files you are about to touch, follow
+what is already there, and prefer a small focused edit to a broad rewrite. Ask
+only when the task is genuinely ambiguous and guessing would be expensive.
+
+**While changing it** — preserve edits already in the working tree. Keep
+mechanical changes (a rename, a `dart fix`) in a separate commit from logic.
+Use the project's established way of doing a thing rather than inventing a
+second one.
+
+**After changing it** — say what changed and which files matter. State what you
+could *not* verify as plainly as what you could. Never report a command as
+passing unless you ran it and saw it pass.
+
+## 3. Stack
 
 | Concern | Choice |
 |---|---|
@@ -15,9 +43,18 @@ One guide for humans and agents alike. `CLAUDE.md` and `AGENTS.md` point here.
 | Icons | {{#picons}}`picons` (`PiconsRegular.*`){{/picons}}{{#materialIcons}}Material `Icons.*`{{/materialIcons}} |
 | Backend | {{#appwrite}}Appwrite{{/appwrite}}{{#offline}}none — fully offline{{/offline}} |
 | Local storage | {{#sqflite}}`sqflite` with numbered SQL migrations{{/sqflite}}{{^hasDatabase}}`shared_preferences` only{{/hasDatabase}} |
+| Theme | {{#localDesignSystem}}tokens owned by this project{{/localDesignSystem}}{{#sharedDesignSystem}}shared `popup_bits_design`{{/sharedDesignSystem}} |
 | Platforms | {{#android}}Android {{/android}}{{#ios}}iOS {{/ios}}{{#web}}web {{/web}}{{#desktop}}desktop{{/desktop}} |
 
-## 2. The one rule that will bite you
+**Dependencies.** Prefer what is already here. Add with
+`flutter pub add <package>` rather than hand-editing constraints. Do not add a
+package for a few lines of helper logic.
+
+**No code generation.** No `build_runner`, `freezed`, `json_serializable`, or
+generated Riverpod providers. Models are written by hand. This is deliberate —
+do not introduce a codegen step without asking.
+
+## 4. The one rule that will bite you
 
 **Never import `package:flutter/material.dart`.** Import
 `package:material_ui/material_ui.dart` instead.
@@ -28,11 +65,11 @@ argument type 'ThemeData' can't be assigned to the parameter type
 'ThemeData'"*. `test/no_frozen_material_test.dart` fails the build if any file
 under `lib/` breaks this rule.
 
-Third-party packages that still use frozen Material (`google_fonts`,
-`go_router`, `picons`) are fine — `MaterialUiCompatibilityBridge`, wired into
-`MaterialApp.builder` in `core/app.dart`, bridges them.
+Third-party packages that still use frozen Material ({{#picons}}`picons`, {{/picons}}`google_fonts`{{#goRouter}}, `go_router`{{/goRouter}})
+are fine — `MaterialUiCompatibilityBridge`, wired into `MaterialApp.builder` in
+`core/app.dart`, bridges them.
 
-Two consequences worth knowing:
+Three consequences worth knowing:
 
 - Use `googleFontsTextTheme(base, GoogleFonts.inter)` from
   `core/theme/google_fonts_text_theme.dart`, never `GoogleFonts.interTextTheme()` —
@@ -40,15 +77,21 @@ Two consequences worth knowing:
   rejects.
 - Localization delegates come from `GlobalMaterialLocalizations.delegates`
   (exported by `material_ui`), covering Flutter, Material and Cupertino. This
-  app neither declares nor imports `flutter_localizations`.
+  app neither declares nor imports `flutter_localizations`. That package has
+  *not* been decoupled — only the Material and Cupertino localizations moved
+  out. `GlobalWidgetsLocalizations` stayed with the widgets layer, so
+  `material_ui` depends on it for you.
+{{#goRouter}}
+- go_router picks its page type by looking for a *frozen* `MaterialApp`
+  ancestor. Routes declared with plain `builder:` silently lose their
+  transitions. This project's routes are fine; keep new ones consistent, and
+  reach for an explicit `pageBuilder` returning a `MaterialPage` if a
+  transition ever goes missing.
+{{/goRouter}}
 
-  That package has **not** been decoupled from the SDK — only the Material and
-  Cupertino localizations moved out, into `material_ui` and `cupertino_ui`.
-  `GlobalWidgetsLocalizations` stayed behind because the widgets layer did, so
-  `material_ui` still depends on `flutter_localizations` itself. It is in your
-  dependency graph either way; you just never name it.
+The `material-ui` skill in `.claude/skills/` covers this in full.
 
-## 3. Layout
+## 5. Layout
 
 ```
 lib/
@@ -89,7 +132,7 @@ code. That is what lets two features be added without touching the same lines.
 | `core/router/routes.dart` + `router.dart` | you add a screen |
 | `features/settings/tiles.dart` | you add a settings row |
 
-## 4. Conventions
+## 6. Conventions
 
 - **No hardcoded values.** Spacing, radii, durations and border widths come
   from `core/theme/tokens.dart`. Colours come from `Theme.of(context).colorScheme`.
@@ -105,32 +148,64 @@ code. That is what lets two features be added without touching the same lines.
   state).
 - Prefer `ref.watch(p.select((s) => s.field))` over watching a whole object
   when a widget needs one field.
+- Handle loading, error and empty states. `core/ui/` has `AsyncView`,
+  `EmptyView`, `ErrorView` so you do not rewrite them per screen.
 
-## 5. Common tasks
+## 7. Responsive layout
 
-### Add a screen
+One codebase adapts by **width**, never by operating system. Platform checks
+are for platform capabilities only.
 
-1. `lib/features/<name>/<name>_screen.dart`
-2. Add its path to `core/router/routes.dart`
-3. Register it in `core/router/router.dart`
-4. Add its strings to both `.arb` files
+`core/util/responsive.dart` owns this. Do not scatter raw width checks.
 
-### Add a string
+| Class | Width | Shape |
+|---|---|---|
+| `compact` | < 600 | one column{{#hasTabs}}, bottom navigation{{/hasTabs}} |
+| `medium` | 600–1023 | two columns{{#hasTabs}}, navigation rail{{/hasTabs}} |
+| `expanded` | ≥ 1024 | multi-column, content capped at 1280 |
 
-Add the key to `lib/l10n/app_en.arb` **and** `lib/l10n/app_ne.arb`, then rebuild.
-`generate: true` in `pubspec.yaml` regenerates `AppLocalizations` on the next
-`flutter run`/`build`; `flutter gen-l10n` does it on demand.
+- `context.isCompact / isMedium / isExpanded / useRail`
+- `context.gridColumns()` for card grids
+- `ContentWidth` caps text-shaped content — never stretch a form or prose
+  edge-to-edge on a desktop window
+- The shell owns navigation; a destination renders body content only
 
-### Run
+**Proof obligation:** any new or meaningfully changed screen is checked at a
+phone width *and* a desktop width. When the adaptive behaviour matters, the
+widget test covers both.
+
+## 8. Testing
+
+- Tests live in `test/`, mirroring `lib/`.
+- `test/no_frozen_material_test.dart` — guards the rule in §4. Do not delete it.
+{{#sqflite}}
+- `test/database_test.dart` — applies every migration to an in-memory database.
+  Malformed SQL is a valid Dart string right up until SQLite rejects it at
+  first launch, so this is the only thing standing between a bad migration and
+  a device.
+{{/sqflite}}
+- `test/app_smoke_test.dart` — the app builds, routes and renders. Shallow on
+  purpose: it exists to fail loudly when startup breaks.
+
+Write a test for logic worth trusting: parsing, formatting, state transitions,
+anything with a branch. Do not chase coverage on generated or trivial code.
+
+**Analysis is not proof.** The two worst failure modes in a `material_ui` app —
+losing route transitions, and a theme silently falling back — pass
+`flutter analyze` and fail only when the app runs. Run it.
+
+## 9. Commands
 
 ```sh
-flutter run
+flutter pub get
+flutter analyze          # zero errors and zero warnings before you call it done
 flutter test
-flutter analyze
+flutter run              # on a device; see §8
+flutter pub add <pkg>
 ```
 {{#screenshots}}
 
-### Store screenshots
+Store screenshots:
 
 ```sh
 flutter drive \
@@ -144,6 +219,40 @@ Output lands in `build/screenshots/`. Edit the nav steps in
 run if it captures nothing, because a green run with an empty store listing is
 indistinguishable from a working one.
 {{/screenshots}}
+
+Release builds are run only when explicitly asked:
+
+```sh
+flutter build apk --release
+flutter build appbundle --release
+```
+
+## 10. Common tasks
+
+### Add a screen
+
+1. `lib/features/<name>/<name>_screen.dart` — body content, not a `Scaffold`,
+   if it is a shell destination
+2. Add its path to `core/router/routes.dart`
+3. Register it in `core/router/router.dart`
+4. Add its strings to **both** `.arb` files
+
+### Add a string
+
+Add the key to `lib/l10n/app_en.arb` **and** `lib/l10n/app_ne.arb`, then rebuild.
+`generate: true` in `pubspec.yaml` regenerates `AppLocalizations` on the next
+`flutter run`/`build`; `flutter gen-l10n` does it on demand.
+{{#sqflite}}
+
+### Add a database migration
+
+1. Write `lib/core/db/migrations/vN_<name>.sql`
+2. Append it to `migrations` in `lib/core/db/migrations/migrations.dart`
+3. Bump `kSchemaVersion`
+
+Migrations run in order on open, each applied at most once. `flutter test`
+proves they apply — run it.
+{{/sqflite}}
 {{#fastlane}}
 
 ### Release
@@ -154,22 +263,18 @@ bundle install                    # once
 bundle exec fastlane internal     # or beta / release
 ```
 
-Requires `.env.android` (gitignored) with `APP_IDENTIFIER`, the keystore
-values, and a path to the Play service-account JSON.
+Requires `.env.android` (gitignored) with `APP_IDENTIFIER`, the keystore values,
+and a path to the Play service-account JSON.
+
+Before a release, check: app name, application id, version name and code, icon,
+permissions, signing, privacy-policy URL reachable, store listing text,
+screenshots. The `store-readiness` skill in `.claude/skills/` audits all of it.
+
+**Never print, rewrite or commit signing credentials.**
 {{/fastlane}}
-{{#sqflite}}
-
-### Add a database migration
-
-1. Write `lib/core/db/migrations/vN_<name>.sql`
-2. Append it to `_migrations` in `lib/core/db/database.dart`
-3. Bump `kSchemaVersion`
-
-Migrations run in order on open, and each is applied at most once.
-{{/sqflite}}
 {{#appwrite}}
 
-## 6. Appwrite
+## 11. Appwrite
 
 - Endpoint, project and database ids live in `core/config/app_config.dart` and
   are overridable with `--dart-define`.
@@ -178,17 +283,44 @@ Migrations run in order on open, and each is applied at most once.
   `rowId`.
 - `core/appwrite/base_repository.dart` gives `list`, `get`, `create`,
   `update`, `delete` over one table.
-- `core/appwrite/failures.dart` maps SDK errors to typed failures. UI surfaces
-  them as a snackbar with a retry.
+- `core/appwrite/failures.dart` maps SDK errors to typed failures. Wrap every
+  SDK call in `runAppwrite`. UI surfaces failures as a snackbar with a retry.
 - Auth state is derived from `account.get()`; the SDK owns the session cookie,
   so nothing persists it by hand.
 {{/appwrite}}
+{{#mcp}}
 
-## 7. Anti-patterns
+## {{#appwrite}}12{{/appwrite}}{{^appwrite}}11{{/appwrite}}. Agent tooling
 
-- `import 'package:flutter/material.dart'` — see §2.
-- `GoogleFonts.xTextTheme()` — see §2.
-- Raw `Color(0xFF…)` in a widget — use the colour scheme.
-- Literal strings in the UI — use the ARB files.
-- `withOpacity` — deprecated; use `withValues(alpha: x)`.
-- Editing `lib/l10n/app_localizations*.dart` — it is generated.
+`.mcp.json` gives an agent the Dart MCP server — analyze, test, run, hot
+reload, device list, runtime errors, widget inspector.{{#appwrite}} It also declares
+Appwrite's hosted MCP server, authenticated in the browser; no credential is
+stored in this repo.{{/appwrite}}
+
+`.claude/skills/` holds skills scoped to this project. See
+`docs/agent-tooling.md`.
+{{/mcp}}
+
+## Before you call it done
+
+- [ ] The change is scoped to what was asked
+- [ ] `flutter analyze` — zero errors, zero warnings
+- [ ] `flutter test` passes; new logic has tests
+- [ ] Changed screens checked at compact *and* expanded widths
+- [ ] Loading, error and empty states handled
+- [ ] New strings in **both** `.arb` files
+- [ ] No `package:flutter/material.dart` import
+- [ ] No hardcoded colours, sizes or strings
+- [ ] No unrelated refactor, no unnecessary dependency
+- [ ] No secret, keystore or production config touched
+- [ ] What you could not verify is stated plainly
+
+## Anti-patterns
+
+- `import 'package:flutter/material.dart'` — see §4
+- `GoogleFonts.xTextTheme()` — see §4
+- Raw `Color(0xFF…)` in a widget — use the colour scheme
+- Literal strings in the UI — use the ARB files
+- `withOpacity` — deprecated; use `withValues(alpha: x)`
+- Raw width checks in feature widgets — use `core/util/responsive.dart`
+- Editing `lib/l10n/app_localizations*.dart` — it is generated

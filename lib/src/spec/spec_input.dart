@@ -37,6 +37,8 @@ class SpecInput {
     this.fastlane,
     this.githubWorkflow,
     this.screenshots,
+    this.agentConfig,
+    this.skills,
     this.keystoreAlias,
     this.keystoreStorePassword,
     this.keystoreKeyPassword,
@@ -72,6 +74,14 @@ class SpecInput {
   final bool? fastlane;
   final bool? githubWorkflow;
   final bool? screenshots;
+
+  /// Write `.mcp.json` and copy skills into the generated repo.
+  final bool? agentConfig;
+
+  /// Which skills to copy. Empty list means none, which is distinct from
+  /// null ("not mentioned, take the default").
+  final List<SkillKind>? skills;
+
   final String? keystoreAlias;
   final String? keystoreStorePassword;
   final String? keystoreKeyPassword;
@@ -114,6 +124,8 @@ class SpecInput {
     fastlane: other.fastlane ?? fastlane,
     githubWorkflow: other.githubWorkflow ?? githubWorkflow,
     screenshots: other.screenshots ?? screenshots,
+    agentConfig: other.agentConfig ?? agentConfig,
+    skills: other.skills ?? skills,
     keystoreAlias: other.keystoreAlias ?? keystoreAlias,
     keystoreStorePassword: other.keystoreStorePassword ?? keystoreStorePassword,
     keystoreKeyPassword: other.keystoreKeyPassword ?? keystoreKeyPassword,
@@ -156,6 +168,11 @@ abstract final class SpecDefaults {
   static const fastlane = true;
   static const githubWorkflow = true;
   static const screenshots = true;
+
+  /// Agents are a first-class user of these projects, so the tooling that
+  /// makes them effective ships by default.
+  static const agentConfig = true;
+  static const skills = SkillKind.values;
   static const moreAppsUrl = 'https://www.popupbits.com/products';
   static const supportEmail = 'info@popupbits.com';
 }
@@ -216,6 +233,11 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
       githubWorkflow: input.githubWorkflow ?? SpecDefaults.githubWorkflow,
       screenshots: input.screenshots ?? SpecDefaults.screenshots,
     ),
+    agents: (input.agentConfig ?? SpecDefaults.agentConfig)
+        ? AgentConfig(skills: input.skills ?? SpecDefaults.skills)
+        // Turning agent config off means off entirely, even if skills were
+        // named — an explicit --no-agent-config should not half-apply.
+        : const AgentConfig(mcp: false),
     keystore: input.hasAnyKeystoreField
         ? KeystoreConfig(
             alias: input.keystoreAlias ?? name,
