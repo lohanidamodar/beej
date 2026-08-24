@@ -115,6 +115,13 @@ in one project, so "the templates compile" is not achievable — proving the
 Package versions live in one place: `lib/src/bricks/versions.dart`. Bump there,
 then re-run the matrix.
 
+## What a generated project depends on
+
+One external repository: `popupbits/fastlane-plugin-play_publisher`, which is
+public. The release workflow is written into the project rather than calling a
+shared reusable workflow, so nothing in a generated repo depends on private
+infrastructure.
+
 ## Known limitation
 
 `designSystem: popup_bits_design` is rejected. That package pins

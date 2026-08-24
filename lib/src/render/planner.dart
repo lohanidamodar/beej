@@ -52,7 +52,12 @@ class Planner {
         final raw = source.read(templateFile.template);
         final content = templateFile.raw
             ? raw
-            : _renderString(raw, fileContext, templateFile.template);
+            : _renderString(
+                raw,
+                fileContext,
+                templateFile.template,
+                delimiters: templateFile.delimiters,
+              );
 
         files.add(
           PlannedFile(
@@ -101,8 +106,9 @@ class Planner {
   String _renderString(
     String template,
     Map<String, dynamic> context,
-    String what,
-  ) {
+    String what, {
+    String delimiters = '{{ }}',
+  }) {
     try {
       // htmlEscapeValues off because we generate Dart, YAML and Gradle — HTML
       // escaping would turn an apostrophe in a description into `&#39;`.
@@ -113,6 +119,7 @@ class Planner {
         htmlEscapeValues: false,
         lenient: false,
         name: what,
+        delimiters: delimiters,
       ).renderString(context);
     } on TemplateException catch (e) {
       throw RenderException('$what: ${e.message}');

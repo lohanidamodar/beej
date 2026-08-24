@@ -11,6 +11,10 @@ abstract final class Versions {
   /// slightly older machine.
   static const dartSdk = '^3.13.0';
 
+  /// Flutter version the generated release workflow builds with. Keep it in
+  /// step with the toolchain the apps are developed against.
+  static const flutterForCi = '3.47.1';
+
   // --- Always present ---------------------------------------------------
 
   /// Material, decoupled from the Flutter SDK. 1.x is the real library;

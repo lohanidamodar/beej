@@ -306,23 +306,46 @@ void main() {
       },
     );
 
-    test('generated tooling points at repositories that exist', () async {
+    test('the Gemfile points at a repository that exists', () async {
       // A URL in a template is never compiled or executed by any test, so a
-      // wrong one is invisible until someone runs `bundle install` or a CI
-      // workflow. This pins the two that generated projects depend on.
+      // wrong one stays invisible until someone runs `bundle install`. This is
+      // the one external repository a generated project still needs.
       final plan = await planFor(const SpecInput(name: 'a1'));
-
       expect(
         contentOf(plan, 'android/Gemfile'),
         contains('github.com/popupbits/fastlane-plugin-play_publisher'),
       );
-      expect(
-        contentOf(plan, '.github/workflows/android-release.yml'),
-        contains(
-          'popupbits/.github/.github/workflows/publish-to-play-store.yml',
-        ),
-      );
     });
+
+    test('the release workflow is self-contained', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final workflow = contentOf(plan, '.github/workflows/android-release.yml');
+
+      // No `uses:` of a reusable workflow — a private one makes the pipeline
+      // unrunnable for anyone who cannot read that repository.
+      expect(workflow, isNot(contains('popupbits/.github')));
+      expect(workflow, isNot(contains('workflow_call')));
+      expect(workflow, contains('bundle exec fastlane'));
+
+      // The `<% %>` delimiters exist so these survive rendering.
+      expect(workflow, contains(r'${{ inputs.release_type }}'));
+      expect(workflow, contains(r'${{ secrets.ANDROID_KEYSTORE_BASE64 }}'));
+      expect(workflow, isNot(contains('<%')));
+    });
+
+    test(
+      'the workflow carries appwrite secrets only when appwrite is on',
+      () async {
+        final offline = await planFor(const SpecInput(name: 'a1'));
+        final appwrite = await planFor(
+          const SpecInput(name: 'a1', backend: Backend.appwrite),
+        );
+        const path = '.github/workflows/android-release.yml';
+
+        expect(contentOf(appwrite, path), contains('APPWRITE_ENDPOINT'));
+        expect(contentOf(offline, path), isNot(contains('APPWRITE')));
+      },
+    );
 
     test('signing details produce a .env.android', () async {
       final unsigned = await planFor(const SpecInput(name: 'a1'));

@@ -113,7 +113,7 @@ class GithubWorkflowBrick extends Brick {
 
   @override
   String get summary =>
-      'GitHub Actions release workflow calling the shared org pipeline';
+      'self-contained GitHub Actions release workflow (build, sign, upload)';
 
   @override
   bool appliesTo(AppSpec spec) =>
@@ -121,12 +121,14 @@ class GithubWorkflowBrick extends Brick {
 
   @override
   List<TemplateFile> files(AppSpec spec) => const [
-    // Copied verbatim: the file is full of `${{ … }}` GitHub expressions,
-    // which mustache would try to interpolate and then fail on.
+    // `<% %>` delimiters, because the file is full of `\${{ … }}` GitHub
+    // expressions that the default `{{ }}` would try to interpolate and then
+    // fail on. Rendering it rather than copying it raw is what lets the
+    // Appwrite bits be conditional.
     TemplateFile(
-      'github/android-release.yml',
+      'github/android-release.yml.tmpl',
       '.github/workflows/android-release.yml',
-      raw: true,
+      delimiters: '<% %>',
     ),
   ];
 }

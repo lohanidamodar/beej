@@ -266,6 +266,12 @@ bundle exec fastlane internal     # or beta / release
 Requires `.env.android` (gitignored) with `APP_IDENTIFIER`, the keystore values,
 and a path to the Play service-account JSON.
 
+CI does the same thing from `.github/workflows/android-release.yml`, which is
+manual-dispatch only. That workflow is **self-contained** — it does not call a
+reusable workflow elsewhere, so it runs for anyone who can read this repo, and
+it cannot break because something in another repository changed. It needs six
+repository secrets; the file lists them at the top.
+
 Before a release, check: app name, application id, version name and code, icon,
 permissions, signing, privacy-policy URL reachable, store listing text,
 screenshots. The `store-readiness` skill in `.claude/skills/` audits all of it.

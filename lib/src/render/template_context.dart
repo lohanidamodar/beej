@@ -1,3 +1,4 @@
+import '../bricks/versions.dart';
 import '../spec/app_spec.dart';
 import '../spec/enums.dart';
 import '../spec/icon_defaults.dart';
@@ -86,6 +87,7 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'fastlane': spec.tooling.fastlane,
     'githubWorkflow': spec.tooling.githubWorkflow,
     'screenshots': spec.tooling.screenshots,
+    'flutterVersion': Versions.flutterForCi,
     'mcp': spec.agents.mcp,
     'hasSkills': spec.agents.skills.isNotEmpty,
     'skills': [

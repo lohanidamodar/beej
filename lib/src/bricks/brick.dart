@@ -9,6 +9,7 @@ class TemplateFile {
     this.extraContext = const {},
     this.raw = false,
     this.executable = false,
+    this.delimiters = '{{ }}',
   });
 
   /// Path under `templates/`, e.g. `base/lib/main.dart.tmpl`.
@@ -29,6 +30,13 @@ class TemplateFile {
 
   /// Set the executable bit on the written file (shell scripts).
   final bool executable;
+
+  /// Mustache delimiters for this file.
+  ///
+  /// GitHub workflows are full of `${{ … }}` expressions, which the default
+  /// `{{ }}` would try to interpolate and then fail on. Switching to `<% %>`
+  /// lets such a file still use conditionals instead of being copied raw.
+  final String delimiters;
 }
 
 /// A cohesive unit of generated project: some files, some dependencies, and
