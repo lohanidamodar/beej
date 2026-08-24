@@ -29,6 +29,33 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: dart test
 
+  # The compiled binary is a genuinely different code path: it has no package
+  # directory, so it reads the *embedded* templates rather than templates/.
+  # Nothing else exercises that, and a stale or mis-escaped embedding would
+  # surface only as a released binary generating wrong projects.
+  binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: dart pub get
+      - name: Templates are freshly embedded
+        run: |
+          dart run tool/embed_templates.dart
+          git diff --exit-code lib/src/render/embedded_templates.g.dart \
+            || (echo "::error::embedded templates are stale - run: dart run tool/embed_templates.dart" && exit 1)
+      - name: Compile
+        run: dart compile exe bin/beej.dart -o /tmp/beej
+      - name: Generate from a directory with no templates in sight
+        run: |
+          mkdir -p /tmp/bin-check && cd /tmp/bin-check
+          /tmp/beej create bincheck --yes --platforms android --database sqflite --out .
+          cd bincheck
+          flutter analyze
+          flutter test
+
   matrix:
     runs-on: ubuntu-latest
     # The generated projects only need the Dart half of the toolchain to

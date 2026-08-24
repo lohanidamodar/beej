@@ -7,7 +7,7 @@ every PopupBits app has converged on, and the parts that genuinely differ as
 explicit choices.
 
 ```sh
-dart pub global activate --source path .
+./tool/install.sh          # compiles and installs to ~/.local/bin/beej
 
 beej create tipot                       # interactive
 beej create tipot --yes                 # take every default
@@ -80,13 +80,33 @@ never contributes. Three registries in the generated app are the seams a
 feature extends: `core/bootstrap.dart`, `core/router/routes.dart`, and
 `features/settings/tiles.dart`.
 
+## Install
+
+`tool/install.sh` compiles a standalone binary to `~/.local/bin/beej`.
+
+Prefer it over `dart pub global activate --source path .`: a path activation
+re-resolves dependencies on every invocation and prints "Resolving
+dependencies..." to **stdout**, which corrupts the output any agent or script
+is reading. It also starts in ~3s against the binary's ~4ms.
+
+The binary is self-contained — templates are embedded, so it works from any
+directory. The trade-off is that it does not track source edits, so re-run
+`./tool/install.sh` after changing beej. It re-embeds templates first, so a
+stale one cannot ship.
+
 ## Development
 
 ```sh
 dart test                            # beej's own tests — seconds
-dart run tool/verify_matrix.dart     # generate 8 configs, analyze + test each
+dart run tool/verify_matrix.dart     # generate 10 configs, analyze + test each
 dart run tool/verify_matrix.dart minimal --keep
+dart run tool/embed_templates.dart   # after editing anything under templates/
 ```
+
+Editing a template takes effect immediately when running from source —
+`TemplateSource` prefers the directory and falls back to the embedded copy. A
+test asserts the two agree, so a forgotten re-embed fails CI rather than
+shipping stale templates in a binary.
 
 The matrix is the real safety net. Mutually exclusive bricks can never coexist
 in one project, so "the templates compile" is not achievable — proving the
