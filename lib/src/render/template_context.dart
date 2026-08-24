@@ -53,6 +53,12 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'appwrite': spec.usesAppwrite,
     'offline': !spec.usesAppwrite,
     'appwriteEndpoint': spec.appwrite?.endpoint ?? '',
+    // The hosted MCP server only reaches Appwrite Cloud.
+    'appwriteCloud':
+        spec.appwrite?.endpoint.contains('cloud.appwrite.io') ?? false,
+    'appwriteSelfHosted':
+        spec.usesAppwrite &&
+        !(spec.appwrite?.endpoint.contains('cloud.appwrite.io') ?? false),
     'appwriteProjectId': spec.appwrite?.projectId ?? '',
     'appwriteDatabaseId': spec.appwrite?.databaseId ?? '',
 

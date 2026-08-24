@@ -519,6 +519,50 @@ void main() {
     });
   });
 
+  group('the Appwrite MCP server', () {
+    const doc = 'docs/agent-tooling.md';
+
+    test('is the hosted one, with no credential in the repo', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      );
+      final config = contentOf(plan, '.mcp.json');
+      expect(config, contains('https://mcp.appwrite.io/'));
+      expect(config, contains('"type": "http"'));
+      // Browser OAuth is the whole reason this file is safe to commit.
+      expect(config.toLowerCase(), isNot(contains('api_key')));
+      expect(config.toLowerCase(), isNot(contains('secret')));
+    });
+
+    test('says nothing about self-hosting when pointed at Cloud', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      );
+      expect(
+        contentOf(plan, doc),
+        isNot(contains('does not point at Appwrite Cloud')),
+      );
+    });
+
+    test(
+      'warns when the endpoint is not Cloud, since hosted cannot reach it',
+      () async {
+        final plan = await planFor(
+          const SpecInput(
+            name: 'a1',
+            backend: Backend.appwrite,
+            appwriteEndpoint: 'https://appwrite.internal.example.com/v1',
+          ),
+        );
+        final guide = contentOf(plan, doc);
+        expect(guide, contains('does not point at Appwrite Cloud'));
+        expect(guide, contains('uvx mcp-server-appwrite'));
+        expect(guide, contains('https://appwrite.internal.example.com/v1'));
+        expect(guide, contains('Do not commit that API key'));
+      },
+    );
+  });
+
   group('the PROJECT.md tooling section', () {
     const path = 'PROJECT.md';
 

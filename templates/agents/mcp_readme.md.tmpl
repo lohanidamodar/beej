@@ -22,14 +22,35 @@ errors is what catches those.
 
 ## appwrite
 
-The hosted server at `https://mcp.appwrite.io/`, authenticated in the browser
-the first time it is used. **No API key is stored in this repo**, which is why
-it is safe to commit this file.
+`.mcp.json` declares the **hosted** server at `https://mcp.appwrite.io/`,
+authenticated in the browser the first time it is used. **No API key is stored
+in this repo**, which is why it is safe to commit that file.
 
-Exposes databases, users, functions, teams and storage for the Appwrite
-project, plus documentation search.
+Exposes databases, users, functions, teams and storage, plus documentation
+search. In Claude Code: run `/mcp`, pick `appwrite`, approve the scopes.
+{{#appwriteSelfHosted}}
 
-In Claude Code, run `/mcp`, pick `appwrite`, and approve the scopes.
+### This project does not point at Appwrite Cloud
+
+`AppConfig.appwriteEndpoint` is `{{appwriteEndpoint}}`, and **the hosted server
+only reaches Appwrite Cloud** — it cannot see a self-hosted instance. The entry
+in `.mcp.json` is left in place because the endpoint is overridable per build,
+but for this instance run the server locally over stdio with a project API key
+instead (needs [`uv`](https://docs.astral.sh/uv/) on PATH):
+
+```bash
+APPWRITE_PROJECT_ID=<project> \
+APPWRITE_API_KEY=<key> \
+APPWRITE_ENDPOINT={{appwriteEndpoint}} \
+uvx mcp-server-appwrite
+```
+
+**Do not commit that API key.** Put it in your own machine-level MCP config,
+not in this repository — which is exactly what the hosted server exists to
+avoid. The API-key catalog is also smaller than the OAuth one: console
+control-plane services are hidden, because project keys cannot authenticate
+those routes.
+{{/appwriteSelfHosted}}
 {{/appwrite}}
 
 {{#android}}
