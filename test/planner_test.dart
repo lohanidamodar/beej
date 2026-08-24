@@ -44,7 +44,7 @@ final coveringSpecs = <AppSpec>[
     ),
   ),
   specOf(const SpecInput(name: 'a1', designSystem: DesignSystem.popupBits)),
-  specOf(const SpecInput(name: 'a1', locales: ['en'])),
+  specOf(const SpecInput(name: 'a1', locales: ['en', 'ne'])),
   // Agent config off, so the brick's absence is covered as well as its
   // presence — an always-on brick hides bugs in the "off" path.
   specOf(const SpecInput(name: 'a1', agentConfig: false)),
@@ -84,15 +84,15 @@ void main() {
       );
     });
 
-    test('writes both ARB files and the l10n config', () {
-      expect(
-        pathsOf(plan),
-        containsAll([
-          'lib/l10n/app_en.arb',
-          'lib/l10n/app_ne.arb',
-          'l10n.yaml',
-        ]),
+    test('writes an ARB per locale and the l10n config', () async {
+      // English only by default; Nepali and anything else are opt-in.
+      expect(pathsOf(plan), containsAll(['lib/l10n/app_en.arb', 'l10n.yaml']));
+      expect(pathsOf(plan), isNot(contains('lib/l10n/app_ne.arb')));
+
+      final bilingual = await planFor(
+        const SpecInput(name: 'a1', locales: ['en', 'ne']),
       );
+      expect(pathsOf(bilingual), contains('lib/l10n/app_ne.arb'));
     });
 
     test('points CLAUDE.md and AGENTS.md at one PROJECT.md', () {
@@ -292,7 +292,9 @@ void main() {
     test(
       'the Play listing gets a Nepali locale only when the app ships one',
       () async {
-        final bilingual = await planFor(const SpecInput(name: 'a1'));
+        final bilingual = await planFor(
+          const SpecInput(name: 'a1', locales: ['en', 'ne']),
+        );
         final englishOnly = await planFor(
           const SpecInput(name: 'a1', locales: ['en']),
         );

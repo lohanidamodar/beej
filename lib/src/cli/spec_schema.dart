@@ -33,7 +33,7 @@ String specJsonSchema() {
     "org": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*(\\\\.[a-z][a-z0-9_]*)+\$",
-      "default": "com.popupbits",
+      "default": "com.example",
       "description": "Reverse-DNS prefix. applicationId is <org>.<name>."
     },
     "platforms": {
@@ -143,9 +143,9 @@ String specJsonSchema() {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "privacyPolicyUrl": { "type": "string", "format": "uri", "description": "Defaults to https://www.popupbits.com/contact/<name>-privacy-policy" },
-        "moreAppsUrl": { "type": "string", "format": "uri", "default": "https://www.popupbits.com/products" },
-        "supportEmail": { "type": "string", "format": "email", "default": "info@popupbits.com" },
+        "privacyPolicyUrl": { "type": "string", "description": "Optional. Accepts {name} and {name-kebab}, expanded per project. Unset means no privacy-policy row is generated - but both stores require one before release." },
+        "moreAppsUrl": { "type": "string", "description": "Optional. Unset means no More-apps row is generated." },
+        "supportEmail": { "type": "string", "format": "email", "description": "Optional. Unset means no Contact-support row is generated." },
         "legalese": { "type": "string" }
       }
     },

@@ -16,9 +16,16 @@ abstract final class AppConfig {
   static const String storeListingUrl =
       'https://play.google.com/store/apps/details?id={{applicationId}}';
 
+{{#hasPrivacyPolicy}}
+  /// Linked from About, and required by both stores before they will publish.
   static const String privacyPolicyUrl = '{{privacyPolicyUrl}}';
+{{/hasPrivacyPolicy}}
+{{#hasMoreApps}}
   static const String moreAppsUrl = '{{moreAppsUrl}}';
+{{/hasMoreApps}}
+{{#hasSupportEmail}}
   static const String supportEmail = '{{supportEmail}}';
+{{/hasSupportEmail}}
   static const String legalese = '{{legalese}}';
 {{#appwrite}}
 

@@ -272,7 +272,8 @@ void main() {
     test('applicationId joins org and name', () {
       expect(
         specOf(const SpecInput(name: 'tipot')).applicationId,
-        'com.popupbits.tipot',
+        'com.example.tipot',
+        reason: 'the built-in org is the neutral one flutter create uses',
       );
     });
 
@@ -293,15 +294,27 @@ void main() {
       expect(spec.flutterCreatePlatforms, 'android,web');
     });
 
-    test('the privacy policy URL follows the org pattern', () {
+    test('a configured privacy URL expands {name-kebab}', () {
+      // There is no default URL — this is what a saved config produces.
+      final spec = specOf(
+        const SpecInput(
+          name: 'mero_nepali',
+          privacyPolicyUrl: 'https://acme.com/{name-kebab}-privacy-policy',
+        ),
+      );
       expect(
-        specOf(const SpecInput(name: 'mero_nepali')).about.privacyPolicyUrl,
-        'https://www.popupbits.com/contact/mero-nepali-privacy-policy',
+        spec.expandPlaceholders(spec.about.privacyPolicyUrl!),
+        'https://acme.com/mero-nepali-privacy-policy',
       );
     });
 
     test('extraLocales excludes the template language', () {
-      expect(specOf(const SpecInput(name: 'a1')).extraLocales, ['ne']);
+      expect(
+        specOf(const SpecInput(name: 'a1', locales: ['en', 'ne'])).extraLocales,
+        ['ne'],
+      );
+      // English-only is the default, so there is nothing extra.
+      expect(specOf(const SpecInput(name: 'a1')).extraLocales, isEmpty);
     });
   });
 

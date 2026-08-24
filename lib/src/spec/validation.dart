@@ -178,6 +178,7 @@ List<SpecIssue> validateSpec(AppSpec spec) {
   _validateLocales(spec, issues);
   _validateBackend(spec, issues);
   _validateKeystore(spec, issues);
+  _validateAbout(spec, issues);
   _validateTooling(spec, issues);
 
   return issues;
@@ -509,6 +510,24 @@ void _validateKeystore(AppSpec spec, List<SpecIssue> issues) {
       ),
     );
   }
+}
+
+void _validateAbout(AppSpec spec, List<SpecIssue> issues) {
+  if (spec.about.hasPrivacyPolicy) return;
+  // Not an error: a project on day one has no policy page yet. But both stores
+  // refuse to publish without a reachable URL, so it is worth saying once
+  // rather than being discovered at submission.
+  issues.add(
+    const SpecIssue(
+      IssueLevel.warning,
+      'about.privacyPolicyUrl',
+      'not set, so the About screen has no privacy-policy row',
+      hint:
+          'Play and the App Store both require one before release. Save a '
+          'pattern once: beej config set about.privacyPolicyUrl '
+          'https://example.com/{name-kebab}-privacy',
+    ),
+  );
 }
 
 void _validateTooling(AppSpec spec, List<SpecIssue> issues) {

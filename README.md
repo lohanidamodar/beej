@@ -9,6 +9,7 @@ explicit choices.
 ```sh
 ./tool/install.sh          # compiles and installs to ~/.local/bin/beej
 
+beej config set org com.acme            # once, not per project
 beej create tipot                       # interactive
 beej create tipot --yes                 # take every default
 beej create --spec app.yaml             # from a file
@@ -42,6 +43,8 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 
 | Option | Values | Default |
 |---|---|---|
+| `org` | reverse-DNS prefix | `com.example` |
+| `locales` | `en` plus any of `ne` | `en` |
 | `platforms` | android, ios, web, windows, macos, linux | all |
 | `backend` | `appwrite`, `none` | `none` |
 | `router` | `go_router`, `navigator` | `go_router` |
@@ -59,6 +62,35 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 | `agents.skills` | `all` / `none` / list | `all` |
 
 `beej bricks` lists what each contributes.
+
+## Making it yours
+
+beej ships neutral defaults — `com.example`, English only, no About URLs — so
+it is useful to anyone. `beej config` is where you set yours once instead of
+passing the same flags to every `create`:
+
+```sh
+beej config                    # show current settings and their file
+beej config keys               # everything settable
+beej config set org com.acme
+beej config set locales en,ne
+beej config set about.privacyPolicyUrl https://acme.com/{name-kebab}-privacy
+beej config unset locales      # back to the built-in default
+```
+
+The file is `$XDG_CONFIG_HOME/beej/config.yaml` (`%APPDATA%\beej` on Windows),
+overridable with `BEEJ_CONFIG`. It is **a spec file without a `name`**, so it
+accepts exactly the same keys as `--spec` and is hand-editable.
+
+About URLs accept `{name}` and `{name-kebab}`, expanded per project — which is
+what makes a per-app privacy-policy URL storable as a one-time preference.
+
+Anything you do not set is simply absent: an About row is generated only when
+its value exists, because a row linking nowhere is worse than no row. beej
+warns when no privacy-policy URL is configured, since both stores require one
+before release.
+
+Resolution order: **built-in defaults < config < spec file < flags.**
 
 ## For agents
 

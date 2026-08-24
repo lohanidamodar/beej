@@ -13,6 +13,7 @@ import '../spec/validation.dart';
 import 'console.dart';
 import 'flag_input.dart';
 import 'prompts.dart';
+import 'user_config.dart';
 
 /// `beej create <name>` — plant a new project.
 class CreateCommand extends Command<int> {
@@ -38,8 +39,19 @@ class CreateCommand extends Command<int> {
   Future<int> run() async {
     final results = argResults!;
 
-    // Layer: defaults (inside resolveSpec) < spec file < flags.
+    // Layer: defaults (inside resolveSpec) < user config < spec file < flags.
     var input = const SpecInput.empty();
+
+    final userConfig = UserConfig.locate();
+    try {
+      input = input.overriddenBy(userConfig.read());
+    } on SpecParseException catch (e) {
+      console
+        ..error('your beej config is not valid, so nothing was generated:')
+        ..line('  ${e.message}')
+        ..line('  ${console.dim(userConfig.path)}');
+      return 1;
+    }
 
     final specPath = results.option('spec');
     if (specPath != null) {

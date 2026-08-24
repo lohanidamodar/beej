@@ -93,12 +93,15 @@ features:
   nepaliDates: false
   review: true
 
+# Every About value is optional — a tile is generated only when its value is
+# set, because a row linking nowhere is worse than an absent row. These are
+# usually saved once with `beej config set`, not repeated per project.
+# URLs accept {name} and {name-kebab}, expanded per project.
 about:
-  # Defaults to https://www.popupbits.com/contact/<name>-privacy-policy
-  privacyPolicyUrl: https://www.popupbits.com/contact/tipot-privacy-policy
-  moreAppsUrl: ${SpecDefaults.moreAppsUrl}
-  supportEmail: ${SpecDefaults.supportEmail}
-  legalese: (c) 2026 PopupBits
+  privacyPolicyUrl: https://example.com/{name-kebab}-privacy-policy
+  moreAppsUrl: https://example.com/apps
+  supportEmail: hello@example.com
+  legalese: (c) 2026 Example
 
 tooling:
   fastlane: true

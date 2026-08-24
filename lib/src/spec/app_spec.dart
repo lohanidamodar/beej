@@ -60,19 +60,33 @@ class Features {
   final bool review;
 }
 
-/// URLs and strings the always-on About module renders.
+/// URLs and strings the About module renders.
+///
+/// Every URL is optional. A fresh project has no privacy policy page and no
+/// products page yet, and a row linking nowhere is worse than no row — so a
+/// tile is only generated when its value is set. Fill these in permanently
+/// via `beej config` rather than per project.
 class AboutConfig {
   const AboutConfig({
-    required this.privacyPolicyUrl,
-    required this.moreAppsUrl,
-    required this.supportEmail,
+    this.privacyPolicyUrl,
+    this.moreAppsUrl,
+    this.supportEmail,
     required this.legalese,
   });
 
-  final String privacyPolicyUrl;
-  final String moreAppsUrl;
-  final String supportEmail;
+  /// Every store refuses to publish without one, so beej warns when it is
+  /// missing — but does not invent a URL that would 404.
+  final String? privacyPolicyUrl;
+
+  final String? moreAppsUrl;
+  final String? supportEmail;
+
+  /// Shown on the About screen and passed to `showLicensePage`.
   final String legalese;
+
+  bool get hasPrivacyPolicy => (privacyPolicyUrl ?? '').isNotEmpty;
+  bool get hasMoreApps => (moreAppsUrl ?? '').isNotEmpty;
+  bool get hasSupportEmail => (supportEmail ?? '').isNotEmpty;
 }
 
 /// Tooling for the coding agents that will work in the generated repo.
@@ -214,15 +228,16 @@ class AppSpec {
       .map((p) => p.wire)
       .join(',');
 
-  /// Default About config for an app named [name] under the PopupBits org.
-  static AboutConfig defaultAbout(String name, int year) => AboutConfig(
-    privacyPolicyUrl:
-        'https://www.popupbits.com/contact/${name.replaceAll('_', '-')}'
-        '-privacy-policy',
-    moreAppsUrl: 'https://www.popupbits.com/products',
-    supportEmail: 'info@popupbits.com',
-    legalese: '© $year PopupBits',
-  );
+  /// `my_app` -> `my-app`, for URLs.
+  String get kebabName => name.replaceAll('_', '-');
+
+  /// Expand `{name}` and `{name-kebab}` in a configured URL.
+  ///
+  /// A saved default like
+  /// `https://example.com/contact/{name-kebab}-privacy-policy` is what makes
+  /// a per-app URL storable as a one-time preference.
+  String expandPlaceholders(String template) =>
+      template.replaceAll('{name}', name).replaceAll('{name-kebab}', kebabName);
 
   /// The single default tab used when none are specified.
   static const defaultTabs = <TabSpec>[

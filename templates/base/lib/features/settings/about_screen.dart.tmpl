@@ -6,8 +6,10 @@ import 'package:picons/picons.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/theme/tokens.dart';
+{{#hasPrivacyPolicy}}
 import '../../core/ui/feedback.dart';
 import '../../core/util/launcher.dart';
+{{/hasPrivacyPolicy}}
 import '../../l10n/app_localizations.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -58,12 +60,14 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const Divider(),
+{{#hasPrivacyPolicy}}
           ListTile(
             leading: const Icon({{iconPrivacy}}),
             title: Text(l10n.aboutPrivacyPolicy),
             subtitle: Text(l10n.aboutPrivacyPolicySubtitle),
             onTap: () => _open(context, AppConfig.privacyPolicyUrl),
           ),
+{{/hasPrivacyPolicy}}
           ListTile(
             leading: const Icon({{iconLicense}}),
             title: Text(l10n.aboutLicenses),
@@ -79,6 +83,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
+{{#hasPrivacyPolicy}}
   Future<void> _open(BuildContext context, String url) async {
     final opened = await Launcher.openUrl(url);
     if (!opened && context.mounted) {
@@ -88,4 +93,5 @@ class AboutScreen extends StatelessWidget {
       );
     }
   }
+{{/hasPrivacyPolicy}}
 }

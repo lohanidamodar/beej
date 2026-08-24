@@ -144,7 +144,9 @@ class SpecResolutionException implements Exception {
 /// Every default in one place, so `beej spec --example` and the prompts and
 /// the resolver cannot disagree about what "the default" is.
 abstract final class SpecDefaults {
-  static const org = 'com.popupbits';
+  /// What `flutter create` uses. beej is not tied to one organisation —
+  /// save your own with `beej config set org <value>`.
+  static const org = 'com.example';
   static const platforms = {
     TargetPlatform.android,
     TargetPlatform.ios,
@@ -158,7 +160,10 @@ abstract final class SpecDefaults {
   static const router = RouterKind.goRouter;
   static const navStyle = NavStyle.tabsAndDrawer;
   static const database = DatabaseKind.none;
-  static const locales = ['en', 'ne'];
+
+  /// English only. Add more per project with `--locales en,ne`, or save a
+  /// different default with `beej config set locales en,ne`.
+  static const locales = ['en'];
   static const designSystem = DesignSystem.local;
   static const icons = IconSet.picons;
   static const inAppUpdate = true;
@@ -173,8 +178,8 @@ abstract final class SpecDefaults {
   /// makes them effective ships by default.
   static const agentConfig = true;
   static const skills = SkillKind.values;
-  static const moreAppsUrl = 'https://www.popupbits.com/products';
-  static const supportEmail = 'info@popupbits.com';
+  // No default URL or address: a link that 404s is worse than an absent
+  // row, so the About screen omits a tile whose value is unset.
 }
 
 /// Collapse a layered [input] into a complete [AppSpec].
@@ -191,7 +196,6 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
   }
 
   final backend = input.backend ?? SpecDefaults.backend;
-  final defaultAbout = AppSpec.defaultAbout(name, year);
 
   return AppSpec(
     name: name,
@@ -223,10 +227,11 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
       review: input.review ?? SpecDefaults.review,
     ),
     about: AboutConfig(
-      privacyPolicyUrl: input.privacyPolicyUrl ?? defaultAbout.privacyPolicyUrl,
-      moreAppsUrl: input.moreAppsUrl ?? SpecDefaults.moreAppsUrl,
-      supportEmail: input.supportEmail ?? SpecDefaults.supportEmail,
-      legalese: input.legalese ?? defaultAbout.legalese,
+      privacyPolicyUrl: input.privacyPolicyUrl,
+      moreAppsUrl: input.moreAppsUrl,
+      supportEmail: input.supportEmail,
+      legalese:
+          input.legalese ?? '© $year ${input.displayName ?? _titleize(name)}',
     ),
     tooling: Tooling(
       fastlane: input.fastlane ?? SpecDefaults.fastlane,

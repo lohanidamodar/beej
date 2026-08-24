@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:beej/src/cli/bricks_command.dart';
+import 'package:beej/src/cli/config_command.dart';
 import 'package:beej/src/cli/console.dart';
 import 'package:beej/src/cli/create_command.dart';
 import 'package:beej/src/cli/spec_command.dart';
@@ -20,6 +21,7 @@ Future<void> main(List<String> arguments) async {
           help: 'Print the beej version.',
         )
         ..addCommand(CreateCommand(console: console))
+        ..addCommand(ConfigCommand(console: console))
         ..addCommand(SpecCommand(console: console))
         ..addCommand(BricksCommand(console: console));
 

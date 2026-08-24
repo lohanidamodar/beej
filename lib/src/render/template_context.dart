@@ -108,9 +108,21 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'localeCodes': spec.locales.join(', '),
 
     // --- About ---
-    'privacyPolicyUrl': spec.about.privacyPolicyUrl,
-    'moreAppsUrl': spec.about.moreAppsUrl,
-    'supportEmail': spec.about.supportEmail,
+    // A tile is generated only when its value is set — a row linking nowhere
+    // is worse than an absent row in a fresh project.
+    'hasPrivacyPolicy': spec.about.hasPrivacyPolicy,
+    'hasMoreApps': spec.about.hasMoreApps,
+    'hasSupportEmail': spec.about.hasSupportEmail,
+    // core/ui/feedback.dart is reached only from the More-apps tile
+    // (toast) and the Appwrite sign-out tile (confirm).
+    'tilesUseFeedback': spec.about.hasMoreApps || spec.usesAppwrite,
+    'privacyPolicyUrl': spec.about.hasPrivacyPolicy
+        ? spec.expandPlaceholders(spec.about.privacyPolicyUrl!)
+        : '',
+    'moreAppsUrl': spec.about.hasMoreApps
+        ? spec.expandPlaceholders(spec.about.moreAppsUrl!)
+        : '',
+    'supportEmail': spec.about.supportEmail ?? '',
     'legalese': spec.about.legalese,
 
     // --- Icon constants used by generated chrome ---
