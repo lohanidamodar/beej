@@ -306,6 +306,24 @@ void main() {
       },
     );
 
+    test('generated tooling points at repositories that exist', () async {
+      // A URL in a template is never compiled or executed by any test, so a
+      // wrong one is invisible until someone runs `bundle install` or a CI
+      // workflow. This pins the two that generated projects depend on.
+      final plan = await planFor(const SpecInput(name: 'a1'));
+
+      expect(
+        contentOf(plan, 'android/Gemfile'),
+        contains('github.com/popupbits/fastlane-plugin-play_publisher'),
+      );
+      expect(
+        contentOf(plan, '.github/workflows/android-release.yml'),
+        contains(
+          'popupbits/.github/.github/workflows/publish-to-play-store.yml',
+        ),
+      );
+    });
+
     test('signing details produce a .env.android', () async {
       final unsigned = await planFor(const SpecInput(name: 'a1'));
       final signed = await planFor(
