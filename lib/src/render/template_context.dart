@@ -89,6 +89,9 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'screenshots': spec.tooling.screenshots,
     'flutterVersion': Versions.flutterForCi,
     'mcp': spec.agents.mcp,
+    // The Tooling section documents the MCP servers and the Android
+    // CLI; with neither it would be an empty heading.
+    'hasTooling': spec.agents.mcp || spec.hasAndroid,
     'hasSkills': spec.agents.skills.isNotEmpty,
     'skills': [
       for (final skill in spec.agents.skills) {'name': skill.wire},

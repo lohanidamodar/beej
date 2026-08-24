@@ -294,18 +294,60 @@ screenshots. The `store-readiness` skill in `.claude/skills/` audits all of it.
 - Auth state is derived from `account.get()`; the SDK owns the session cookie,
   so nothing persists it by hand.
 {{/appwrite}}
+{{#hasTooling}}
+
+## {{#appwrite}}12{{/appwrite}}{{^appwrite}}11{{/appwrite}}. Tooling — use it when it is there
+
+Prefer a real tool over shelling out by hand. Each of these is optional: check
+once, use it if present, fall back quietly if not. Never make a task fail
+because a tool is missing.
 {{#mcp}}
 
-## {{#appwrite}}12{{/appwrite}}{{^appwrite}}11{{/appwrite}}. Agent tooling
+### Dart / Flutter MCP
 
-`.mcp.json` gives an agent the Dart MCP server — analyze, test, run, hot
-reload, device list, runtime errors, widget inspector.{{#appwrite}} It also declares
-Appwrite's hosted MCP server, authenticated in the browser; no credential is
-stored in this repo.{{/appwrite}}
+`.mcp.json` declares it, and it ships **inside the Dart SDK** (`dart
+mcp-server`) so there is nothing to install. One server covers both languages:
 
-`.claude/skills/` holds skills scoped to this project. See
-`docs/agent-tooling.md`.
+- `analyze_files`, `run_tests`, `dart_fix`, `dart_format`
+- `launch_app`, `hot_reload`, `hot_restart`, `stop_app`, `list_devices`
+- `get_runtime_errors`, `get_app_logs`, `widget_inspector`
+- `pub`, `pub_dev_search`, `read_package_uris`
+
+Reach for it before `flutter run` in a terminal: it is the difference between
+reasoning about this app and actually running it. **This matters more here than
+usual** — the two worst `material_ui` failures (§4) pass `flutter analyze` and
+appear only at runtime, so reading real runtime errors is how you catch them.
 {{/mcp}}
+{{#android}}
+
+### Android CLI
+
+Google's `android` command, in the SDK's `cmdline-tools/latest/bin`. Newer and
+much broader than `adb`; if it is on PATH, prefer it.
+
+| Command | Use |
+|---|---|
+| `android info` | SDK path, connected devices, config — start here when something is off |
+| `android emulator list` / `start <avd>` | boot a device without opening Android Studio |
+| `android screen capture` | device screenshot straight to PNG (no `adb shell screencap` + `pull` dance) |
+| `android layout` | the running app's layout tree, for debugging what actually rendered |
+| `android docs search "..."` | official Android documentation, rather than guessing |
+| `android sdk install/list` | fix a missing platform or build-tools package |
+| `android install <apk>` | incremental install, faster than `adb install` |
+
+`flutter run` and `flutter build` stay the build path for this project — the
+Android CLI complements them for device, emulator, SDK and inspection work.
+
+Add `--no-metrics` if you would rather it not report usage.
+{{/android}}
+{{#mcp}}
+
+### Skills
+
+`.claude/skills/` holds skills scoped to this project; they load on demand when
+a task matches. See `docs/agent-tooling.md`.
+{{/mcp}}
+{{/hasTooling}}
 
 ## Before you call it done
 

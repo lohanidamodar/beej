@@ -519,6 +519,45 @@ void main() {
     });
   });
 
+  group('the PROJECT.md tooling section', () {
+    const path = 'PROJECT.md';
+
+    test('names the Dart MCP and the Android CLI when both apply', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
+      );
+      final guide = contentOf(plan, path);
+      expect(guide, contains('Dart / Flutter MCP'));
+      expect(guide, contains('Android CLI'));
+      expect(guide, contains('android screen capture'));
+    });
+
+    test('drops the Android CLI when android is not a target', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.web}),
+      );
+      final guide = contentOf(plan, path);
+      expect(guide, contains('Dart / Flutter MCP'));
+      expect(guide, isNot(contains('Android CLI')));
+    });
+
+    test('omits the whole section when there is no tool to name', () async {
+      // Neither MCP nor Android — an empty heading would be worse than none.
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.web},
+          agentConfig: false,
+        ),
+      );
+      final guide = contentOf(plan, path);
+      expect(guide, isNot(contains('Tooling — use it when it is there')));
+      expect(guide, isNot(contains('Android CLI')));
+      // The rest of the guide is unaffected.
+      expect(guide, contains('Before you call it done'));
+    });
+  });
+
   group('brick hygiene', () {
     test('the covering specs really do reach every brick', () {
       final reached = <String>{
