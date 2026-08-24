@@ -39,8 +39,14 @@ Two consequences worth knowing:
   the latter returns a frozen `TextTheme` that `material_ui`'s `ThemeData`
   rejects.
 - Localization delegates come from `GlobalMaterialLocalizations.delegates`
-  (exported by `material_ui`). This app does **not** depend on
-  `flutter_localizations` directly.
+  (exported by `material_ui`), covering Flutter, Material and Cupertino. This
+  app neither declares nor imports `flutter_localizations`.
+
+  That package has **not** been decoupled from the SDK — only the Material and
+  Cupertino localizations moved out, into `material_ui` and `cupertino_ui`.
+  `GlobalWidgetsLocalizations` stayed behind because the widgets layer did, so
+  `material_ui` still depends on `flutter_localizations` itself. It is in your
+  dependency graph either way; you just never name it.
 
 ## 3. Layout
 

@@ -176,9 +176,13 @@ class BaseBrick extends Brick {
           'define same-named, mutually incompatible types, and '
           'test/no_frozen_material_test.dart enforces the rule.\n'
           '\n'
-          'This is also why flutter_localizations is absent: material_ui '
-          'exports GlobalMaterialLocalizations.delegates, covering Flutter, '
-          'Material and Cupertino strings.',
+          'This is also why flutter_localizations is not listed. It has NOT '
+          'been decoupled — it is still an SDK-only package, and material_ui '
+          'depends on it for GlobalWidgetsLocalizations. What moved out of '
+          'the SDK is the Material and Cupertino localizations, which now '
+          'live in material_ui and cupertino_ui. So the app neither declares '
+          'nor imports flutter_localizations, and gets all three delegate '
+          'sets from GlobalMaterialLocalizations.delegates.',
     ),
     PubDep.hosted(
       'cupertino_icons',
