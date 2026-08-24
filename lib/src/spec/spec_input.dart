@@ -200,7 +200,7 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
   return AppSpec(
     name: name,
     displayName: input.displayName ?? _titleize(name),
-    description: input.description ?? 'A ${_titleize(name)} app by PopupBits.',
+    description: input.description ?? 'A new Flutter app.',
     org: input.org ?? SpecDefaults.org,
     platforms: input.platforms ?? SpecDefaults.platforms,
     backend: backend,

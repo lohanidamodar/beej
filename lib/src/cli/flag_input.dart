@@ -42,7 +42,7 @@ void addCreateFlags(ArgParser parser) {
     ..addOption(
       'org',
       help: 'Reverse-DNS org prefix.',
-      valueHelp: 'com.popupbits',
+      valueHelp: 'com.example',
     )
     ..addOption('display-name', help: 'Human-facing app name.')
     ..addOption('description', help: 'One-line description.')

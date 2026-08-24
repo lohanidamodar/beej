@@ -47,7 +47,7 @@ Future<SpecInput> promptForMissing(
         description: _text(
           console,
           'One-line description',
-          defaultValue: 'A ${result.displayName} app by PopupBits.',
+          defaultValue: 'A new Flutter app.',
         ),
       ),
     );
@@ -165,7 +165,7 @@ Future<SpecInput> promptForMissing(
 
   if (result.icons == null) {
     final choice = _choose(console, 'Icons', [
-      _Choice('picons', 'Phosphor (picons) — used across PopupBits apps'),
+      _Choice('picons', 'Phosphor icons — a fuller, more consistent set'),
       _Choice('material', 'Material icons'),
     ]);
     result = result.overriddenBy(

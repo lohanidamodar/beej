@@ -30,7 +30,7 @@ class CreateCommand extends Command<int> {
   String get name => 'create';
 
   @override
-  String get description => 'Plant a new PopupBits Flutter app.';
+  String get description => 'Plant a new Flutter app.';
 
   @override
   String get invocation => 'beej create <name> [options]';

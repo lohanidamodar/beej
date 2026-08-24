@@ -172,7 +172,7 @@ class AppSpec {
   final String displayName;
   final String description;
 
-  /// Reverse-DNS organisation prefix, e.g. `com.popupbits`.
+  /// Reverse-DNS organisation prefix, e.g. `com.example`.
   final String org;
 
   final Set<TargetPlatform> platforms;

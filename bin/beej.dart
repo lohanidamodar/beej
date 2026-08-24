@@ -13,17 +13,16 @@ const String beejVersion = '0.1.0';
 Future<void> main(List<String> arguments) async {
   final console = Console();
 
-  final runner =
-      CommandRunner<int>('beej', 'Plant a new PopupBits Flutter app.')
-        ..argParser.addFlag(
-          'version',
-          negatable: false,
-          help: 'Print the beej version.',
-        )
-        ..addCommand(CreateCommand(console: console))
-        ..addCommand(ConfigCommand(console: console))
-        ..addCommand(SpecCommand(console: console))
-        ..addCommand(BricksCommand(console: console));
+  final runner = CommandRunner<int>('beej', 'Plant a new Flutter app.')
+    ..argParser.addFlag(
+      'version',
+      negatable: false,
+      help: 'Print the beej version.',
+    )
+    ..addCommand(CreateCommand(console: console))
+    ..addCommand(ConfigCommand(console: console))
+    ..addCommand(SpecCommand(console: console))
+    ..addCommand(BricksCommand(console: console));
 
   try {
     final topLevel = runner.argParser.parse(arguments);

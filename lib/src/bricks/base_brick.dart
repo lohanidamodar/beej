@@ -8,7 +8,7 @@ import 'versions.dart';
 ///
 /// If something is here it is not a choice — the app, its theme, its
 /// localization, its settings and its About module are the same shape in every
-/// PopupBits app on purpose.
+/// generated app on purpose.
 class BaseBrick extends Brick {
   const BaseBrick();
 

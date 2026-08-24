@@ -1,6 +1,6 @@
 name: beej
 description: >-
-  Plants a new PopupBits Flutter app — material_ui, Riverpod, go_router,
+  Plants a new Flutter app — material_ui, Riverpod, go_router,
   en/ne localization, theming, fastlane and the store-screenshot harness,
   with Appwrite, sqflite and the rest as explicit choices.
 version: 0.1.0

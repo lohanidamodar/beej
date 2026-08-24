@@ -1,10 +1,17 @@
 # beej
 
-**बीज** — plant a new PopupBits Flutter app.
+**बीज** — plant a new Flutter app.
 
-A Dart CLI that generates a complete, buildable Flutter project with the stack
-every PopupBits app has converged on, and the parts that genuinely differ as
-explicit choices.
+A Dart CLI that generates a complete, buildable Flutter project: `material_ui`,
+Riverpod, routing, localization, theming with live personalization, an About
+module, release tooling and agent config — with the parts that genuinely differ
+left as explicit choices.
+
+It is opinionated rather than general-purpose. The opinions came from thirteen
+production Flutter apps that had converged on one stack but drifted into five
+`lib/` layouts, four analyzer configs and four localization setups. Defaults are
+neutral (`com.example`, English), and `beej config` is where you make them
+yours.
 
 ```sh
 ./tool/install.sh          # compiles and installs to ~/.local/bin/beej

@@ -18,7 +18,7 @@ String writePubspec({
   final buffer = StringBuffer()
     ..writeln('name: ${spec.name}')
     ..writeln('description: ${_scalar(spec.description)}')
-    // Every PopupBits app is private; publishing would be an accident.
+    // Apps are not pub packages; publishing one would be an accident.
     ..writeln("publish_to: 'none'")
     ..writeln('version: 1.0.0+1')
     ..writeln()

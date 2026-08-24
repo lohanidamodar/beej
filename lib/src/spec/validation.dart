@@ -240,7 +240,7 @@ void _validateOrg(AppSpec spec, List<SpecIssue> issues) {
         IssueLevel.error,
         'org',
         '"$org" needs at least two reverse-DNS segments',
-        hint: 'e.g. com.popupbits',
+        hint: 'e.g. com.example',
       ),
     );
   }

@@ -102,7 +102,7 @@ class KeystoreGenerator {
 
   /// X.500 name used when the spec did not supply one.
   static String _defaultDname(AppSpec spec) =>
-      'CN=${spec.displayName}, O=PopupBits, C=NP';
+      'CN=${spec.displayName}, O=${spec.displayName}';
 
   /// Locate `keytool`: PATH first, then JAVA_HOME, then the JBR that ships
   /// with Android Studio — which is the only JDK on many Flutter machines.
