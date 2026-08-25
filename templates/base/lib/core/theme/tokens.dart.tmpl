@@ -64,4 +64,9 @@ abstract final class Breakpoints {
 
   /// Forms and prose stop growing here; beyond it they centre.
   static const double maxContentWidth = 1280;
+
+  /// Cap for a short centred message — an empty state, an error. Wide enough
+  /// for a couple of lines, narrow enough that it stays one readable column
+  /// instead of one very long line on a desktop window.
+  static const double maxMessageWidth = 420;
 }

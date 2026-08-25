@@ -6,6 +6,7 @@ import 'package:picons/picons.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/util/responsive.dart';
 {{#hasPrivacyPolicy}}
 import '../../core/ui/feedback.dart';
 import '../../core/util/launcher.dart';
@@ -22,7 +23,9 @@ class AboutScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.aboutTitle)),
-      body: ListView(
+      body: ContentWidth(
+        maxWidth: 720,
+        child: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -78,7 +81,8 @@ class AboutScreen extends StatelessWidget {
               applicationLegalese: AppConfig.legalese,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

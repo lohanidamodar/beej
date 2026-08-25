@@ -161,6 +161,10 @@ class BaseBrick extends Brick {
       'base/test/app_smoke_test.dart.tmpl',
       'test/app_smoke_test.dart',
     ),
+    const TemplateFile(
+      'base/test/responsive_test.dart.tmpl',
+      'test/responsive_test.dart',
+    ),
   ];
 
   @override
