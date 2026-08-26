@@ -274,7 +274,11 @@ repository secrets; the file lists them at the top.
 
 Before a release, check: app name, application id, version name and code, icon,
 permissions, signing, privacy-policy URL reachable, store listing text,
-screenshots. The `store-readiness` skill in `.claude/skills/` audits all of it.
+screenshots. Two skills in `.claude/skills/` cover this: `store-readiness`
+audits whether the submission will be **accepted**, and
+`app-store-optimization` works on whether the listing will be **found and
+installed**. The Play listing itself is in the repo under
+`android/fastlane/metadata/`, so listing copy is reviewed like code.
 
 **Never print, rewrite or commit signing credentials.**
 {{/fastlane}}

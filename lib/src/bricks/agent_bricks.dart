@@ -62,5 +62,10 @@ class AgentConfigBrick extends Brick {
     ],
     SkillKind.mobileUiDesign => const ['SKILL.md', 'references/flutter.md'],
     SkillKind.materialUi => const ['SKILL.md'],
+    SkillKind.appStoreOptimization => const [
+      'SKILL.md',
+      'references/apple.md',
+      'references/play.md',
+    ],
   };
 }

@@ -519,6 +519,51 @@ void main() {
     });
   });
 
+  group('the store skills', () {
+    test('ships both, and they answer different questions', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+
+      final readiness = contentOf(
+        plan,
+        '.claude/skills/store-readiness/SKILL.md',
+      );
+      final aso = contentOf(
+        plan,
+        '.claude/skills/app-store-optimization/SKILL.md',
+      );
+
+      // Acceptance vs performance. If these ever converge, one of them has
+      // drifted into the other's job.
+      expect(readiness, contains('readiness'));
+      expect(aso, contains('found'));
+      expect(
+        aso,
+        contains('store-readiness'),
+        reason: 'ASO should point at the audit skill rather than repeat it',
+      );
+
+      // Per-store references, because the two stores need opposite advice.
+      expect(
+        pathsOf(plan),
+        containsAll([
+          '.claude/skills/app-store-optimization/references/apple.md',
+          '.claude/skills/app-store-optimization/references/play.md',
+        ]),
+      );
+    });
+
+    test('ASO knows where this project keeps its Play listing', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final play = contentOf(
+        plan,
+        '.claude/skills/app-store-optimization/references/play.md',
+      );
+      // The path the fastlane brick actually writes.
+      expect(play, contains('android/fastlane/metadata/android/'));
+      expect(play, contains('short_description.txt'));
+    });
+  });
+
   group('the Appwrite MCP server', () {
     const doc = 'docs/agent-tooling.md';
 

@@ -41,6 +41,10 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 - **`PROJECT.md`** as the single guide, with `CLAUDE.md` and `AGENTS.md`
   pointing at it — scope, workflow, conventions, the responsive contract, a
   testing strategy and a done-checklist.
+- **Agent skills** in `.claude/skills/`: `material-ui` (the frozen-vs-modern
+  Material traps), `store-readiness` (will the submission be accepted),
+  `app-store-optimization` (will the listing be found and installed), and
+  `mobile-ui-design`.
 - **Agent tooling**: `.mcp.json` declaring the Dart MCP server (it ships inside
   the Dart SDK, so nothing to install) plus Appwrite's hosted server when that
   backend is on, and project-scoped skills under `.claude/skills/`. Turn it all

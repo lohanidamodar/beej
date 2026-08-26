@@ -83,7 +83,11 @@ enum SkillKind {
 
   /// The frozen-vs-modern Material rules, the bridge, and the failures that
   /// pass `flutter analyze`.
-  materialUi('material-ui');
+  materialUi('material-ui'),
+
+  /// Making a listing found and installed — the counterpart to
+  /// [storeReadiness], which only asks whether it will be accepted.
+  appStoreOptimization('app-store-optimization');
 
   const SkillKind(this.wire);
 
