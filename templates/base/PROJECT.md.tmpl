@@ -28,8 +28,10 @@ mechanical changes (a rename, a `dart fix`) in a separate commit from logic.
 Use the project's established way of doing a thing rather than inventing a
 second one.
 
-**After changing it** — say what changed and which files matter. State what you
-could *not* verify as plainly as what you could. Never report a command as
+**After changing it** — **run the app on a real device or emulator with
+`flutter run` and look at what you changed.** Analyzing and testing is not
+finishing; see §8. Then say what changed and which files matter, state what you
+could *not* verify as plainly as what you could, and never report a command as
 passing unless you ran it and saw it pass.
 
 ## 3. Stack
@@ -190,9 +192,41 @@ widget test covers both.
 Write a test for logic worth trusting: parsing, formatting, state transitions,
 anything with a branch. Do not chase coverage on generated or trivial code.
 
-**Analysis is not proof.** The two worst failure modes in a `material_ui` app —
-losing route transitions, and a theme silently falling back — pass
-`flutter analyze` and fail only when the app runs. Run it.
+### Analysis is not proof — run it
+
+**Always run the app on a connected device or emulator before calling a change
+done.** A green `flutter analyze` and a green `flutter test` say the code is
+well-formed, not that it works.
+
+This is not a general principle; it is what this stack does. Every one of these
+passes analysis and fails only at runtime:
+
+- A malformed SQL migration is a perfectly valid Dart string until SQLite
+  rejects it, and the app then dies on first launch.
+- go_router silently drops route transitions under a `material_ui`
+  `MaterialApp` — screens snap instead of animating (§4).
+- A theme falls back to defaults when a package resolves the frozen Material
+  `Theme` instead of this one.
+- A plugin that is fine on the host fails on the device: a permission, a
+  missing platform channel, an unavailable service.
+
+```sh
+flutter devices          # what is actually connected
+flutter run              # then exercise the screen you changed
+```
+
+{{#mcp}}
+Prefer the Dart MCP's `launch_app` plus `get_runtime_errors` over watching a
+terminal — reading the app's real errors is the point.
+{{/mcp}}
+{{#android}}
+No device to hand? `android emulator list`, then
+`android emulator start <avd>`.
+{{/android}}
+
+**If you genuinely cannot run it** — no device, no emulator, a platform you
+cannot build for — say so explicitly and name what is therefore unverified.
+Silence reads as "I checked", and that is the one thing it must never mean.
 
 ## 9. Commands
 
@@ -358,6 +392,8 @@ a task matches. See `docs/agent-tooling.md`.
 - [ ] The change is scoped to what was asked
 - [ ] `flutter analyze` — zero errors, zero warnings
 - [ ] `flutter test` passes; new logic has tests
+- [ ] **Ran on a device or emulator and exercised the change** — or said plainly
+      that you could not, and what is unverified as a result
 - [ ] Changed screens checked at compact *and* expanded widths
 - [ ] Loading, error and empty states handled
 - [ ] New strings in **both** `.arb` files

@@ -519,6 +519,42 @@ void main() {
     });
   });
 
+  group('the run-on-a-device rule', () {
+    const path = 'PROJECT.md';
+
+    test('appears in the workflow, the testing section and the checklist', () async {
+      final guide = contentOf(await planFor(const SpecInput(name: 'a1')), path);
+      // Three places, because an agent reads for "what does done mean" in
+      // different spots depending on the task.
+      expect(guide, contains('Analysis is not proof'));
+      expect(guide, contains('`flutter run`'));
+      expect(guide, contains('flutter devices'));
+      expect(guide, contains('Ran on a device or emulator'));
+      // The escape hatch has to be explicit, or the rule quietly becomes a lie.
+      expect(guide, contains('If you genuinely cannot run it'));
+    });
+
+    test('never points at a Tooling section that was not generated', () async {
+      // No MCP and no Android means no Tooling section; a cross-reference to
+      // it would be a dangling pointer in the shipped guide.
+      final guide = contentOf(
+        await planFor(
+          const SpecInput(
+            name: 'a1',
+            platforms: {TargetPlatform.web},
+            agentConfig: false,
+          ),
+        ),
+        path,
+      );
+      expect(guide, isNot(contains('Tooling — use it when it is there')));
+      expect(guide, isNot(contains('Dart MCP')));
+      expect(guide, isNot(contains('android emulator')));
+      // The rule itself survives regardless.
+      expect(guide, contains('Analysis is not proof'));
+    });
+  });
+
   group('the store skills', () {
     test('ships both, and they answer different questions', () async {
       final plan = await planFor(const SpecInput(name: 'a1'));
