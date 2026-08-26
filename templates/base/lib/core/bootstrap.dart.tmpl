@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'error/error_logger.dart';
 import 'settings/app_settings.dart';
 import 'settings/settings_controller.dart';
 {{#sqflite}}
@@ -79,6 +80,11 @@ class BootstrapResult {
 /// than running an app that silently forgets every change.
 Future<BootstrapResult> runBootstrap() async {
   final preferences = await SharedPreferences.getInstance();
+
+  // As early as possible: anything already captured in memory is merged with
+  // what previous runs recorded, so nothing thrown before this point is lost.
+  await ErrorLogger.instance.attachStorage(preferences);
+
   final settings = readSettings(preferences);
 {{#sqflite}}
   final database = await AppDatabase.open();
@@ -96,6 +102,9 @@ Future<BootstrapResult> runBootstrap() async {
         stackTrace: stackTrace,
       );
       failures.add(BootstrapFailure(step.name, error));
+      // Also into the log, so a step that fails only on one user's device is
+      // visible on that device rather than only in a console they never see.
+      ErrorLogger.instance.record(error, stackTrace, source: 'bootstrap');
     }
   }
 

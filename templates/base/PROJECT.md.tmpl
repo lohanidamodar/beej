@@ -102,6 +102,7 @@ lib/
     app.dart                 root MaterialApp — theme, locale, bridge
     bootstrap.dart           ordered async init  ← REGISTRY
     config/app_config.dart   compile-time config and --dart-define overrides
+    error/                   error capture, the on-device log
     router/
       routes.dart            every path constant  ← REGISTRY
       navigation.dart        context.goTo / pushTo / back
@@ -121,6 +122,7 @@ lib/
     <feature>/               one folder per feature
     settings/
       tiles.dart             settings rows  ← REGISTRY
+      diagnostics_screen.dart  the captured error log
 ```
 
 ### The three registries
@@ -188,6 +190,13 @@ widget test covers both.
 {{/sqflite}}
 - `test/app_smoke_test.dart` — the app builds, routes and renders. Shallow on
   purpose: it exists to fail loudly when startup breaks.
+- `test/error_logger_test.dart` — deduplication, the size cap, and surviving a
+  corrupt stored log.
+
+`.github/workflows/ci.yml` runs `flutter analyze` and `flutter test` on every
+push and pull request. That is what makes the guarantees above binding rather
+than aspirational — a guard nobody runs is not a guard. Releasing stays
+separate and manual.
 
 Write a test for logic worth trusting: parsing, formatting, state transitions,
 anything with a branch. Do not chase coverage on generated or trivial code.
@@ -228,7 +237,33 @@ No device to hand? `android emulator list`, then
 cannot build for — say so explicitly and name what is therefore unverified.
 Silence reads as "I checked", and that is the one thing it must never mean.
 
-## 9. Commands
+## 9. When something goes wrong at runtime
+
+`core/error/` captures errors the app cannot otherwise tell you about. All
+three routes out of a Flutter app are covered: `FlutterError.onError` for build
+and layout failures, `PlatformDispatcher.onError` for uncaught async errors,
+and a guarded zone around `main` for everything else.
+
+This matters more here than in an ordinary project. The two worst failure modes
+in a `material_ui` app — a lost route transition, a theme silently falling back
+— pass `flutter analyze` and appear only on a device you do not have.
+
+- Records are deduplicated by a stable fingerprint and capped at 50, so a crash
+  loop costs one row rather than filling the device.
+- Everything stays on the device. Settings → Diagnostics shows the log, and
+  sharing it is the user's deliberate act.
+- `ErrorLogger.instance.record(error, stackTrace)` (or
+  `ref.read(errorLoggerProvider)`) records something you caught yourself.
+- Catching an error and showing a message is still right. Record it as well
+  when you would want to know it happened.
+{{#appwrite}}
+- `core/error/appwrite_error_sink.dart` can forward errors to an `error_logs`
+  table. It is generated but **not wired up**: stack traces carry more about a
+  user's session than they appear to, so turning it on belongs in your privacy
+  policy before it belongs in `main.dart`.
+{{/appwrite}}
+
+## 10. Commands
 
 ```sh
 flutter pub get
@@ -261,7 +296,7 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-## 10. Common tasks
+## 11. Common tasks
 
 ### Add a screen
 
@@ -300,6 +335,11 @@ bundle exec fastlane internal     # or beta / release
 Requires `.env.android` (gitignored) with `APP_IDENTIFIER`, the keystore values,
 and a path to the Play service-account JSON.
 
+Release notes come from `android/fastlane/metadata/android/<locale>/changelogs/`.
+`supply` uploads the file whose name matches the build's versionCode and falls
+back to `default.txt`, so an unedited `default.txt` becomes your public "What's
+new". Write the real notes before you ship.
+
 CI does the same thing from `.github/workflows/android-release.yml`, which is
 manual-dispatch only. That workflow is **self-contained** — it does not call a
 reusable workflow elsewhere, so it runs for anyone who can read this repo, and
@@ -318,7 +358,7 @@ installed**. The Play listing itself is in the repo under
 {{/fastlane}}
 {{#appwrite}}
 
-## 11. Appwrite
+## 12. Appwrite
 
 - Endpoint, project and database ids live in `core/config/app_config.dart` and
   are overridable with `--dart-define`.
@@ -334,7 +374,7 @@ installed**. The Play listing itself is in the repo under
 {{/appwrite}}
 {{#hasTooling}}
 
-## {{#appwrite}}12{{/appwrite}}{{^appwrite}}11{{/appwrite}}. Tooling — use it when it is there
+## {{#appwrite}}13{{/appwrite}}{{^appwrite}}12{{/appwrite}}. Tooling — use it when it is there
 
 Prefer a real tool over shelling out by hand. Each of these is optional: check
 once, use it if present, fall back quietly if not. Never make a task fail

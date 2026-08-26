@@ -84,6 +84,13 @@ class FastlaneBrick extends Brick {
           'fastlane/android/video.txt.tmpl',
           'android/fastlane/metadata/android/$locale/video.txt',
         ),
+        // supply reads changelogs/<versionCode>.txt and falls back to
+        // default.txt. With neither, a release publishes to Play with an
+        // empty "What's new".
+        TemplateFile(
+          'fastlane/android/changelog_default.txt.tmpl',
+          'android/fastlane/metadata/android/$locale/changelogs/default.txt',
+        ),
       ],
     ],
     if (spec.hasIos) ...[
@@ -113,23 +120,29 @@ class GithubWorkflowBrick extends Brick {
 
   @override
   String get summary =>
-      'self-contained GitHub Actions release workflow (build, sign, upload)';
+      'GitHub Actions: CI on every push, plus a self-contained release workflow';
+
+  // Note the missing `hasAndroid`: CI is worth having on a web-only or
+  // desktop-only app too. Only the release half is Android-specific.
+  @override
+  bool appliesTo(AppSpec spec) => spec.tooling.githubWorkflow;
 
   @override
-  bool appliesTo(AppSpec spec) =>
-      spec.tooling.githubWorkflow && spec.hasAndroid;
-
-  @override
-  List<TemplateFile> files(AppSpec spec) => const [
-    // `<% %>` delimiters, because the file is full of `\${{ … }}` GitHub
-    // expressions that the default `{{ }}` would try to interpolate and then
-    // fail on. Rendering it rather than copying it raw is what lets the
-    // Appwrite bits be conditional.
-    TemplateFile(
-      'github/android-release.yml.tmpl',
-      '.github/workflows/android-release.yml',
-      delimiters: '<% %>',
-    ),
+  List<TemplateFile> files(AppSpec spec) => [
+    // Analyze and test on push and pull request. Unconditional, because
+    // every generated project has tests, and tests that never run are
+    // guarantees on paper only.
+    const TemplateFile('github/ci.yml.tmpl', '.github/workflows/ci.yml'),
+    if (spec.hasAndroid)
+      // `<% %>` delimiters, because the file is full of `${{ … }}` GitHub
+      // expressions that the default `{{ }}` would try to interpolate and
+      // then fail on. Rendering it rather than copying it raw is what lets
+      // the Appwrite bits be conditional.
+      const TemplateFile(
+        'github/android-release.yml.tmpl',
+        '.github/workflows/android-release.yml',
+        delimiters: '<% %>',
+      ),
   ];
 }
 

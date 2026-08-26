@@ -2,6 +2,7 @@ import 'agent_bricks.dart';
 import 'backend_bricks.dart';
 import 'base_brick.dart';
 import 'brick.dart';
+import 'error_bricks.dart';
 import 'feature_bricks.dart';
 import 'router_bricks.dart';
 import 'theme_bricks.dart';
@@ -14,6 +15,7 @@ import 'tooling_bricks.dart';
 /// [TemplateCollisionException] if two ever claim the same path.
 const List<Brick> allBricks = <Brick>[
   BaseBrick(),
+  ErrorCaptureBrick(),
   LocalThemeBrick(),
   SharedThemeBrick(),
   GoRouterBrick(),

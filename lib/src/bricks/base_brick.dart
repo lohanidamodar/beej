@@ -87,10 +87,15 @@ class BaseBrick extends Brick {
     ),
 
     // --- Localization: one ARB per chosen locale ---
+    // `<% %>` delimiters: an ICU plural is written
+    // `{count, plural, other{{count} items}}`, and that inner `{{` is
+    // mustache's own opening delimiter. With the default delimiters, any
+    // plural or select message in an ARB file is a parse error.
     for (final locale in spec.locales)
       TemplateFile(
         'base/lib/l10n/app_$locale.arb.tmpl',
         'lib/l10n/app_$locale.arb',
+        delimiters: '<% %>',
       ),
     const TemplateFile('base/l10n.yaml.tmpl', 'l10n.yaml'),
 

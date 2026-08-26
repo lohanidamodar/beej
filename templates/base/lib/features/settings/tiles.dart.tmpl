@@ -7,6 +7,8 @@ import 'package:picons/picons.dart';
 {{#hasMoreApps}}
 import '../../core/config/app_config.dart';
 {{/hasMoreApps}}
+import '../../core/error/error_logger.dart';
+import '../../core/error/error_record.dart';
 import '../../core/router/navigation.dart';
 import '../../core/router/routes.dart';
 {{#tilesUseFeedback}}
@@ -79,6 +81,27 @@ List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
     SettingsSection(
       title: l10n.settingsAbout,
       tiles: [
+        // Rebuilds itself as errors arrive, so the row shows a count
+        // without Settings having to watch anything.
+        ValueListenableBuilder<List<ErrorRecord>>(
+          valueListenable: ErrorLogger.instance.records,
+          builder: (context, records, _) => ListTile(
+            leading: Icon(
+              {{iconDiagnostics}},
+              color: records.isEmpty
+                  ? null
+                  : Theme.of(context).colorScheme.error,
+            ),
+            title: Text(l10n.settingsDiagnostics),
+            subtitle: Text(
+              records.isEmpty
+                  ? l10n.settingsDiagnosticsNone
+                  : l10n.settingsDiagnosticsBody(records.length),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushTo(Routes.diagnostics),
+          ),
+        ),
         ListTile(
           leading: const Icon({{iconAbout}}),
           title: Text(l10n.aboutTitle),

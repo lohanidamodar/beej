@@ -35,6 +35,11 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   first frame.
 - **The About module** — privacy policy, open-source licences, share, rate,
   more apps, contact support — wired into routes and the settings list.
+- **Error capture** — `FlutterError.onError`, `PlatformDispatcher.onError` and
+  a guarded zone around `main`, feeding a deduplicated, size-capped on-device
+  log and a Diagnostics screen the user can share. It stays on the device: a
+  shipped app that cannot see its own runtime failures is guessing, and the
+  worst `material_ui` failures never reach `flutter analyze`.
 - **Responsive helpers**, shared UI (`AsyncView`, `EmptyView`, `ErrorView`,
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.
@@ -45,6 +50,9 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   Material traps), `store-readiness` (will the submission be accepted),
   `app-store-optimization` (will the listing be found and installed), and
   `mobile-ui-design`.
+- **CI on day one** — `.github/workflows/ci.yml` runs `flutter analyze` and
+  `flutter test` on every push and pull request, so the generated guards
+  actually hold. Releasing stays separate and manual.
 - **Agent tooling**: `.mcp.json` declaring the Dart MCP server (it ships inside
   the Dart SDK, so nothing to install) plus Appwrite's hosted server when that
   backend is on, and project-scoped skills under `.claude/skills/`. Turn it all

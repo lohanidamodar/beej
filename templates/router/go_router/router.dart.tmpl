@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../features/{{id}}/{{id}}_screen.dart';
 {{/tabs}}
 import '../../features/settings/about_screen.dart';
+import '../../features/settings/diagnostics_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/app_shell.dart';
 {{#appwrite}}
@@ -85,6 +86,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                     // mid-read.
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (_, _) => const AboutScreen(),
+                  ),
+                  GoRoute(
+                    path: 'diagnostics',
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (_, _) => const DiagnosticsScreen(),
                   ),
                 ],
               ),

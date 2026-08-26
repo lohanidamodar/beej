@@ -1,14 +1,14 @@
 {
   "@@locale": "en",
 
-  "appTitle": "{{appName}}",
+  "appTitle": "<%appName%>",
   "@appTitle": {
     "description": "The app name, shown in the title bar and the About screen"
   },
 
-{{#tabs}}
-  "{{l10nKey}}": "{{label}}",
-{{/tabs}}
+<%#tabs%>
+  "<%l10nKey%>": "<%label%>",
+<%/tabs%>
   "navSettings": "Settings",
 
   "actionRetry": "Retry",
@@ -64,19 +64,19 @@
   "aboutLicenses": "Open-source licences",
   "aboutLicensesSubtitle": "Third-party packages this app uses",
 
-  "aboutShare": "Share {{appName}}",
+  "aboutShare": "Share <%appName%>",
   "aboutShareSubtitle": "Tell someone who'd find it useful",
-  "aboutShareMessage": "I've been using {{appName}} — you might like it too.",
+  "aboutShareMessage": "I've been using <%appName%> — you might like it too.",
 
-  "aboutRate": "Rate {{appName}}",
+  "aboutRate": "Rate <%appName%>",
   "aboutRateSubtitle": "A rating genuinely helps",
 
   "aboutMoreApps": "More apps",
   "aboutMoreAppsSubtitle": "Other apps we make",
 
   "aboutSupport": "Contact support",
-  "aboutSupportSubtitle": "{{supportEmail}}",
-  "aboutSupportSubject": "{{appName}} support",
+  "aboutSupportSubtitle": "<%supportEmail%>",
+  "aboutSupportSubject": "<%appName%> support",
 
   "errorCouldNotOpen": "Couldn't open {target}",
   "@errorCouldNotOpen": {
@@ -84,14 +84,14 @@
       "target": { "type": "String", "example": "https://example.com" }
     }
   },
-{{#inAppUpdate}}
+<%#inAppUpdate%>
 
   "updateReadyTitle": "Update downloaded",
   "updateRestart": "Restart",
   "updateStuck": "An update is waiting to finish",
   "updateOpenStore": "Open Play Store",
-{{/inAppUpdate}}
-{{#appwrite}}
+<%/inAppUpdate%>
+<%#appwrite%>
 
   "authSignIn": "Sign in",
   "authSignUp": "Create account",
@@ -102,7 +102,7 @@
   "authNoAccount": "No account yet? Create one",
   "authHaveAccount": "Already have an account? Sign in",
   "authSignOut": "Sign out",
-  "authSignOutConfirm": "Sign out of {{appName}}?",
+  "authSignOutConfirm": "Sign out of <%appName%>?",
   "authAccount": "Account",
   "authEmailRequired": "Enter your email",
   "authEmailInvalid": "That doesn't look like an email address",
@@ -110,13 +110,27 @@
   "authPasswordTooShort": "Passwords must be at least 8 characters",
   "authNameRequired": "Enter your name",
   "authRecoverySent": "Check your email for a reset link",
-{{/appwrite}}
+<%/appwrite%>
 
-  "settingsDiagnostics": "Some features didn't start",
-  "settingsDiagnosticsBody": "{count} background service failed to start. The app works, but parts of it may not.",
+  "settingsDiagnostics": "Diagnostics",
+  "settingsDiagnosticsBody": "{count, plural, =1{1 recent error} other{{count} recent errors}}",
   "@settingsDiagnosticsBody": {
     "placeholders": {
       "count": { "type": "int", "example": "1" }
+    }
+  },
+  "settingsDiagnosticsNone": "Nothing to report",
+
+  "diagnosticsEmpty": "No errors recorded",
+  "diagnosticsEmptyBody": "When something goes wrong, it is collected here so you can send us the details.",
+  "diagnosticsShare": "Share report",
+  "diagnosticsShareSubject": "<%appName%> diagnostics",
+  "diagnosticsClear": "Clear",
+  "diagnosticsClearConfirm": "Clear all recorded errors?",
+  "diagnosticsSeenTimes": "{count, plural, =1{seen once} other{seen {count} times}}",
+  "@diagnosticsSeenTimes": {
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
     }
   }
 }

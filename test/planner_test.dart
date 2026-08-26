@@ -398,9 +398,17 @@ void main() {
       ]) {
         final plan = await planFor(input);
         for (final file in plan.files) {
+          // ARB files are rendered with `<% %>`, because an ICU plural is
+          // written `other{{count} items}` and that `{{` would otherwise be
+          // read as a mustache tag. Check for the delimiters the file was
+          // actually rendered with.
+          final isArb = file.path.endsWith('.arb');
+          final leftover = isArb
+              ? RegExp(r'<%[#/^]?\w')
+              : RegExp(r'\{\{[#/^]?\w');
           expect(
             file.content,
-            isNot(matches(RegExp(r'\{\{[#/^]?\w'))),
+            isNot(matches(leftover)),
             reason: 'unrendered mustache tag in ${file.path}',
           );
         }
@@ -412,6 +420,54 @@ void main() {
       final workflow = contentOf(plan, '.github/workflows/android-release.yml');
       // Rendered rather than copied, mustache would eat these.
       expect(workflow, contains(r'${{ inputs.release_type }}'));
+    });
+
+    test('CI runs analyze and test on push, for every platform', () async {
+      for (final platforms in [
+        {TargetPlatform.android},
+        {TargetPlatform.web},
+      ]) {
+        final plan = await planFor(SpecInput(name: 'a1', platforms: platforms));
+        final ci = contentOf(plan, '.github/workflows/ci.yml');
+        expect(ci, contains('flutter analyze'));
+        expect(ci, contains('flutter test'));
+        // Release is manual-dispatch only; CI is what has to fire on push.
+        expect(ci, contains('push:'));
+        expect(ci, contains('pull_request:'));
+      }
+    });
+
+    test(
+      'a web-only project gets CI but no Android release workflow',
+      () async {
+        final plan = await planFor(
+          const SpecInput(name: 'a1', platforms: {TargetPlatform.web}),
+        );
+        final paths = plan.files.map((f) => f.path);
+        expect(paths, contains('.github/workflows/ci.yml'));
+        expect(paths, isNot(contains('.github/workflows/android-release.yml')));
+      },
+    );
+
+    test('Play metadata carries a changelog fallback per locale', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', locales: ['en', 'ne']),
+      );
+      final paths = plan.files.map((f) => f.path);
+      // supply falls back to default.txt when no file matches the
+      // versionCode. Without it a release ships with empty release notes.
+      expect(
+        paths,
+        contains(
+          'android/fastlane/metadata/android/en-US/changelogs/default.txt',
+        ),
+      );
+      expect(
+        paths,
+        contains(
+          'android/fastlane/metadata/android/ne-NP/changelogs/default.txt',
+        ),
+      );
     });
 
     test('the generated pubspec is valid YAML with quoted ranges', () async {
@@ -680,6 +736,80 @@ void main() {
       expect(guide, isNot(contains('Android CLI')));
       // The rest of the guide is unaffected.
       expect(guide, contains('Before you call it done'));
+    });
+  });
+  group('error capture', () {
+    test('every project captures errors, whatever else it chose', () async {
+      for (final input in [
+        const SpecInput(name: 'a1'),
+        const SpecInput(name: 'a1', router: RouterKind.navigator),
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      ]) {
+        final plan = await planFor(input);
+        final paths = plan.files.map((f) => f.path);
+        expect(paths, contains('lib/core/error/error_logger.dart'));
+        expect(paths, contains('lib/core/error/error_record.dart'));
+        expect(
+          paths,
+          contains('lib/features/settings/diagnostics_screen.dart'),
+        );
+        expect(paths, contains('test/error_logger_test.dart'));
+      }
+    });
+
+    test('main installs the handlers before it does anything else', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final main = contentOf(plan, 'lib/main.dart');
+      // Order matters: a failure during startup is exactly the one worth
+      // catching, and it happens before runApp.
+      expect(
+        main.indexOf('ErrorLogger.instance.install()'),
+        lessThan(main.indexOf('WidgetsFlutterBinding.ensureInitialized()')),
+      );
+      expect(main, contains('ErrorLogger.runGuarded'));
+    });
+
+    test('bootstrap records its own failed steps', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final bootstrap = contentOf(plan, 'lib/core/bootstrap.dart');
+      expect(bootstrap, contains('ErrorLogger.instance.attachStorage'));
+      expect(bootstrap, contains("source: 'bootstrap'"));
+    });
+
+    test('only an Appwrite project gets the remote sink', () async {
+      final offline = await planFor(const SpecInput(name: 'a1'));
+      expect(
+        offline.files.map((f) => f.path),
+        isNot(contains('lib/core/error/appwrite_error_sink.dart')),
+      );
+
+      final backed = await planFor(
+        const SpecInput(name: 'a1', backend: Backend.appwrite),
+      );
+      expect(
+        backed.files.map((f) => f.path),
+        contains('lib/core/error/appwrite_error_sink.dart'),
+      );
+      // Generated, but deliberately not wired up: sending error data off the
+      // device is a privacy decision, not a default.
+      expect(
+        contentOf(backed, 'lib/main.dart'),
+        contains('ErrorLogger.instance.attachSink(AppwriteErrorSink('),
+      );
+    });
+
+    test('the diagnostics route is reachable under both routers', () async {
+      for (final router in RouterKind.values) {
+        final plan = await planFor(SpecInput(name: 'a1', router: router));
+        expect(
+          contentOf(plan, 'lib/core/router/routes.dart'),
+          contains('diagnostics'),
+        );
+        expect(
+          contentOf(plan, 'lib/core/router/router.dart'),
+          contains('DiagnosticsScreen'),
+        );
+      }
     });
   });
 

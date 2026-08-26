@@ -67,6 +67,23 @@ abstract final class Launcher {
     }
   }
 
+  /// Share arbitrary text — a diagnostics report, an exported note.
+  ///
+  /// Separate from [shareApp] because that one appends the store link, which
+  /// is right for a recommendation and wrong for everything else.
+  static Future<void> shareText(String text, {String? subject}) async {
+    try {
+      await SharePlus.instance.share(ShareParams(text: text, subject: subject));
+    } catch (error, stackTrace) {
+      developer.log(
+        'share failed',
+        name: 'launcher',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
 {{#hasSupportEmail}}
   /// Open a pre-addressed support email.
   static Future<bool> emailSupport({required String subject}) {

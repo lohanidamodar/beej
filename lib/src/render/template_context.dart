@@ -174,6 +174,11 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'iconLanguage': _chrome(spec, picons: 'translate', material: 'translate'),
     'iconTextSize': _chrome(spec, picons: 'textAa', material: 'format_size'),
     'iconAccount': _chrome(spec, picons: 'user', material: 'person_outline'),
+    'iconDiagnostics': _chrome(
+      spec,
+      picons: 'bug',
+      material: 'bug_report_outlined',
+    ),
     'iconSignOut': _chrome(
       spec,
       picons: 'signOut',
