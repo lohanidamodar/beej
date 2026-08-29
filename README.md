@@ -14,7 +14,7 @@ neutral (`com.example`, English), and `beej config` is where you make them
 yours.
 
 ```sh
-./tool/install.sh          # compiles and installs to ~/.local/bin/beej
+dart pub global activate --source git https://github.com/lohanidamodar/beej.git
 
 beej config set org com.acme            # once, not per project
 beej create tipot                       # interactive
@@ -141,17 +141,31 @@ feature extends: `core/bootstrap.dart`, `core/router/routes.dart`, and
 
 ## Install
 
-`tool/install.sh` compiles a standalone binary to `~/.local/bin/beej`.
+```sh
+dart pub global activate --source git https://github.com/lohanidamodar/beej.git
+```
 
-Prefer it over `dart pub global activate --source path .`: a path activation
-re-resolves dependencies on every invocation and prints "Resolving
-dependencies..." to **stdout**, which corrupts the output any agent or script
-is reading. It also starts in ~3s against the binary's ~4ms.
+One command, no clone. pub compiles a snapshot at activation time, so runs are
+clean and quick (~70ms) and nothing is re-resolved per invocation. Make sure
+`~/.pub-cache/bin` is on your PATH.
 
-The binary is self-contained — templates are embedded, so it works from any
-directory. The trade-off is that it does not track source edits, so re-run
-`./tool/install.sh` after changing beej. It re-embeds templates first, so a
-stale one cannot ship.
+Update with the same command; pin a version with `--git-ref v0.1.0`.
+
+### If you are working on beej itself
+
+```sh
+./tool/install.sh          # compiles a standalone binary to ~/.local/bin/beej
+```
+
+~3ms rather than ~70ms, and it re-embeds templates first so a stale one cannot
+ship. The binary does not track source edits, so re-run it after changing beej.
+
+### What not to use
+
+`dart pub global activate --source path .` re-resolves dependencies on every
+invocation and prints "Resolving dependencies..." to **stdout**, which corrupts
+the output any agent or script is reading. It also starts in ~3s. Use one of
+the two above instead.
 
 ## Development
 
