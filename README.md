@@ -14,7 +14,7 @@ neutral (`com.example`, English), and `beej config` is where you make them
 yours.
 
 ```sh
-dart pub global activate --source git https://github.com/lohanidamodar/beej.git
+dart pub global activate beej
 
 beej config set org com.acme            # once, not per project
 beej create tipot                       # interactive
@@ -142,14 +142,18 @@ feature extends: `core/bootstrap.dart`, `core/router/routes.dart`, and
 ## Install
 
 ```sh
-dart pub global activate --source git https://github.com/lohanidamodar/beej.git
+dart pub global activate beej
 ```
 
 One command, no clone. pub compiles a snapshot at activation time, so runs are
 clean and quick (~70ms) and nothing is re-resolved per invocation. Make sure
 `~/.pub-cache/bin` is on your PATH.
 
-Update with the same command; pin a version with `--git-ref v0.1.0`.
+For an unreleased change, activate from git instead:
+
+```sh
+dart pub global activate --source git https://github.com/lohanidamodar/beej.git
+```
 
 ### If you are working on beej itself
 
