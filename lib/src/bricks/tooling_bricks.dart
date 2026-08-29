@@ -237,35 +237,41 @@ class ScreenshotsBrick extends Brick {
       'test_driver/integration_test.dart',
     ),
 
-    // How the captures are framed: device bezel, background and the headline
-    // under each one. Committed, so listing design is reviewed like code.
+    // The headline copy, in one file because both stores read it: the Android
+    // workflow composites from it and goldie.config.ts imports it. Committed,
+    // so listing copy is reviewed like code.
     const TemplateFile(
-      'screenshots/Framefile.json.tmpl',
-      'fastlane/screenshots/Framefile.json',
+      'screenshots/headlines.json.tmpl',
+      'screenshots/headlines.json',
     ),
-    const TemplateFile(
-      'screenshots/README.md.tmpl',
-      'fastlane/screenshots/README.md',
-    ),
-    const TemplateFile(
-      'screenshots/title.strings.tmpl',
-      'fastlane/screenshots/en-US/title.strings',
-    ),
-    if (spec.locales.contains('ne'))
+    const TemplateFile('screenshots/README.md.tmpl', 'screenshots/README.md'),
+    // Android's compositor. Dart rather than shell in the workflow: it has
+    // real branching, and `--dry-run` makes it inspectable before CI runs it.
+    if (spec.hasAndroid)
       const TemplateFile(
-        'screenshots/title_ne.strings.tmpl',
-        'fastlane/screenshots/ne-NP/title.strings',
+        'screenshots/caption_screenshots.dart.tmpl',
+        'tool/caption_screenshots.dart',
+        // No mustache tags in it, and it is full of Dart string
+        // interpolation. Copied rather than rendered so the two can never
+        // collide.
+        raw: true,
       ),
+    // goldie builds the App Store assets; it is iOS-only by construction, so
+    // there is nothing to generate for an Android-only app.
+    if (spec.hasIos)
+      const TemplateFile('goldie/goldie.config.ts.tmpl', 'goldie.config.ts'),
 
     // The capture workflows. Manual only — they rewrite the repository.
     if (spec.tooling.githubWorkflow) ...[
-      // Shared, so Play and the App Store are framed by the same code and
-      // come out looking like the same app.
-      const TemplateFile(
-        'github/frame-screenshots-action.yml.tmpl',
-        '.github/actions/frame-screenshots/action.yml',
-        raw: true,
-      ),
+      // Android only: the App Store side is goldie, which does its own
+      // framing. What keeps the two listings consistent is the shared copy
+      // in screenshots/headlines.json, not shared code.
+      if (spec.hasAndroid)
+        const TemplateFile(
+          'github/caption-screenshots-action.yml.tmpl',
+          '.github/actions/caption-screenshots/action.yml',
+          raw: true,
+        ),
       if (spec.hasAndroid)
         const TemplateFile(
           'github/screenshots-android.yml.tmpl',

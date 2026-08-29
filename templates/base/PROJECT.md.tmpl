@@ -288,17 +288,25 @@ Output lands in `build/screenshots/`. Edit the nav steps in
 run if it captures nothing, because a green run with an empty store listing is
 indistinguishable from a working one.
 
-**Framing and headlines** live in `fastlane/screenshots/` — `Framefile.json`
-for the bezel, background and type, and `<locale>/title.strings` for the
-headline under each capture. Both are committed, so how the listing looks is
-reviewed like code. `fastlane/screenshots/README.md` explains the one trap
-worth knowing: frameit matches a title key as a substring of the screenshot's
-*full path*, so the numeric prefix in `"01_home"` is load-bearing.
+**Headline copy** lives in `screenshots/headlines.json`, in one file because
+both stores read it. Two manual workflows do the rest on a runner and commit
+the result — they never run on push, because they rewrite the repository.
 
-Two manual workflows do the whole thing on a runner and commit the result:
-**Screenshots (Android)** on Ubuntu, and **Screenshots (iOS)** on macOS. Each
-takes a locale, captures, frames, and pushes the images into the directory the
-upload lane reads. They never run on push — they rewrite the repository.
+| | Play | App Store |
+|---|---|---|
+| Workflow | **Screenshots (Android)**, `ubuntu-latest` | **Screenshots (iOS)**, `macos-latest` |
+| Capture | this integration test, on an emulator | goldie, replaying argent flows |
+| Framing | `tool/caption_screenshots.dart` | goldie's bezel and background |
+
+Two different tools because no tool does both: goldie is iOS-only by
+construction — its device layer is `xcrun simctl` and its device list is one
+entry — and nothing on the Play side produces App Store preview videos. What
+keeps the listings consistent is the shared copy, not shared code.
+
+`screenshots/README.md` has the details, including the one that bites:
+**fonts are chosen per locale**. A font that sets an English headline draws a
+Devanagari one as *nothing at all* — a blank caption in a perfectly valid PNG.
+The compositor measures ink and fails rather than shipping that.
 {{/screenshots}}
 {{#ios}}
 

@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "Store screenshot copy, in one place because two stores read it.",
+    "The Android workflow composites these headlines over the captures;",
+    "goldie.config.ts imports this same file for the App Store, so the two",
+    "listings cannot drift apart.",
+    "",
+    "Scene ids match the capture names the integration test writes and the",
+    "argent flow names goldie replays. Keep them in step when you add a screen.",
+    "",
+    "These are store copy, not UI strings: write the benefit, not the feature.",
+    "Most people never scroll past the first two."
+  ],
+
+  "background": "#12121A",
+  "headlineColor": "#FFFFFF",
+  "subheadColor": "#A6ADBB",
+
+  "fonts": {
+    "default": "DejaVu-Sans"{{#hasNepali}},
+    "ne-NP": "Noto-Sans-Devanagari"{{/hasNepali}}
+  },
+
+  "scenes": [
+{{#tabs}}
+    {
+      "id": "{{id}}",
+      "headline": {
+        "en-US": "{{label}}"{{#hasNepali}},
+        "ne-NP": "{{neLabel}}"{{/hasNepali}}
+      },
+      "subhead": {
+        "en-US": ""{{#hasNepali}},
+        "ne-NP": ""{{/hasNepali}}
+      }
+    },
+{{/tabs}}
+    {
+      "id": "settings",
+      "headline": {
+        "en-US": "Settings"{{#hasNepali}},
+        "ne-NP": "सेटिङ"{{/hasNepali}}
+      },
+      "subhead": {
+        "en-US": ""{{#hasNepali}},
+        "ne-NP": ""{{/hasNepali}}
+      }
+    }
+  ]
+}

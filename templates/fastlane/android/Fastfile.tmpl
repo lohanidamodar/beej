@@ -54,14 +54,4 @@ platform :android do
     play_download_metadata
   end
 
-  # Frames whatever `flutter drive` left in build/screenshots, using the
-  # committed config in fastlane/screenshots/. The Screenshots (Android)
-  # workflow does the same thing on a runner; this is the local equivalent.
-  desc "Frame raw screenshots with frameit"
-  lane :screenshots do |options|
-    locale = options[:locale] || "en-US"
-    dir = "../../fastlane/screenshots/#{locale}"
-    sh("mkdir -p #{dir} && cp ../../build/screenshots/*.png #{dir}/")
-    frameit(path: dir)
-  end
 end

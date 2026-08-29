@@ -1,17 +1,19 @@
-# Capture, frame and commit App Store screenshots.
+# Capture, frame and commit App Store screenshots with goldie.
 #
-# Manual only, and macOS — the iOS simulator has no Linux equivalent, so this
-# is the one workflow that genuinely needs a Mac runner. On a private repo
-# macOS minutes bill at 10x, which is another reason it is not automatic.
+# Manual only, and macOS — goldie drives an iOS simulator through `xcrun
+# simctl`, which has no Linux equivalent. macOS minutes bill at 10x on a
+# private repo, which is another reason this is not automatic.
 #
-#   1. boots a simulator and runs integration_test/screenshot_test.dart
-#   2. frames the captures with fastlane frameit, using the same committed
-#      config as Android, so both listings look like the same app
-#   3. commits the framed images where `deliver` uploads them from
+#   1. builds a release simulator app
+#   2. `goldie all` replays the argent flows, frames each capture with a
+#      device bezel and headline, and checks the result against Apple's rules
+#   3. commits the images where `deliver` uploads them from
 #
-# Apple wants 6.9" iPhone screenshots (1320 x 2868); the default simulator
-# below is that size. `xcrun simctl list devicetypes` on the runner shows what
-# the installed Xcode actually offers if you need to change it.
+# PREREQUISITE: argent flows. goldie replays flows from `.argent/flows`, named
+# `store-<scene>` for each scene in screenshots/headlines.json. They do not
+# exist until someone records them, which is a Mac-side job — see
+# screenshots/README.md. Until then this workflow fails at the capture step,
+# on purpose and with a clear message rather than a green run and no images.
 
 name: Screenshots (iOS)
 
@@ -29,9 +31,6 @@ on:
 <% #appStoreLocales %>
           - <% code %>
 <% /appStoreLocales %>
-      simulator:
-        description: "Simulator device name"
-        default: "iPhone 16 Pro Max"
       commit:
         description: "Commit the result back to the branch"
         type: boolean
@@ -43,12 +42,21 @@ permissions:
 jobs:
   screenshots:
     runs-on: macos-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       LOCALE: ${{ inputs.locale }}
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Check the flows exist
+        run: |
+          if [ ! -d .argent/flows ] || [ -z "$(ls -A .argent/flows 2>/dev/null)" ]; then
+            echo "::error::no argent flows in .argent/flows — goldie has nothing to replay."
+            echo "Record them on a Mac first; see screenshots/README.md."
+            exit 1
+          fi
+          ls -la .argent/flows
 
       - uses: subosito/flutter-action@v2
         with:
@@ -56,31 +64,43 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Boot the simulator
-        id: sim
-        run: |
-          xcrun simctl list devicetypes
-          udid=$(xcrun simctl create screenshots "${{ inputs.simulator }}")
-          xcrun simctl boot "$udid"
-          xcrun simctl bootstatus "$udid" -b
-          echo "udid=$udid" >> "$GITHUB_OUTPUT"
-
-      - name: Capture
-        run: |
-          flutter drive \
-            --driver=test_driver/integration_test.dart \
-            --target=integration_test/screenshot_test.dart \
-            --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
-            -d ${{ steps.sim.outputs.udid }}
-
-      - name: Frame them
-        uses: ./.github/actions/frame-screenshots
+      - uses: actions/setup-node@v4
         with:
-          locale: ${{ inputs.locale }}
-          destination: ios/fastlane/screenshots/${{ inputs.locale }}
+          node-version: "20"
+
+      - name: Install goldie and its tools
+        run: |
+          brew install ffmpeg
+          npm i -g goldie @swmansion/argent
+
+      - name: Build the simulator app
+        # Release, because a debug build paints banners into the captures.
+        run: |
+          flutter pub get
+          flutter build ios --simulator --release
+
+      - name: Check the toolchain
+        run: goldie doctor
+
+      - name: Capture, frame and verify
+        run: goldie all
+
+      - name: Place the images
+        env:
+          DESTINATION: ios/fastlane/screenshots/${{ inputs.locale }}
+        run: |
+          set -euo pipefail
+          src="out/$LOCALE"
+          if [ ! -d "$src" ] || [ -z "$(ls -A "$src" 2>/dev/null)" ]; then
+            echo "::error::goldie produced nothing in $src"
+            exit 1
+          fi
+          # Replaced wholesale: a scene removed from headlines.json should
+          # disappear from the listing too.
+          rm -rf "$DESTINATION"
+          mkdir -p "$DESTINATION"
+          find "$src" -name '*.png' -exec cp {} "$DESTINATION/" \;
+          ls -la "$DESTINATION"
 
       - name: Commit
         if: ${{ inputs.commit }}
@@ -95,13 +115,9 @@ jobs:
           git commit -m "chore: refresh App Store screenshots (${LOCALE})"
           git push
 
-      - name: Shut the simulator down
-        if: always()
-        run: xcrun simctl delete ${{ steps.sim.outputs.udid }} || true
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: screenshots-ios-${{ inputs.locale }}
-          path: fastlane/screenshots/${{ inputs.locale }}/
+          path: out/
           if-no-files-found: warn

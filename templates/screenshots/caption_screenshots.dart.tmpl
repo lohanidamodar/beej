@@ -1,0 +1,343 @@
+// Composites the store headline over each raw capture.
+//
+// Background, headline, then the screenshot below it — no device bezel, which
+// is the common modern Play look and avoids depending on a frame library whose
+// newest Android device is years old.
+//
+// Copy comes from screenshots/headlines.json, the same file goldie.config.ts
+// reads for the App Store, so both listings say the same thing.
+//
+//   dart run tool/caption_screenshots.dart --locale en-US --out <dir>
+//   dart run tool/caption_screenshots.dart --locale en-US --out <dir> --dry-run
+//
+// Needs ImageMagick on PATH. Dart rather than shell because this has real
+// branching in it, and because the toolchain is already here.
+
+import 'dart:convert';
+import 'dart:io';
+
+Future<void> main(List<String> args) async {
+  final locale = _option(args, '--locale') ?? 'en-US';
+  final destination = _option(args, '--out');
+  final dryRun = args.contains('--dry-run');
+
+  if (destination == null) {
+    stderr.writeln('usage: --locale <code> --out <dir> [--dry-run]');
+    exit(64);
+  }
+
+  final config = Config.load(File('screenshots/headlines.json'));
+  final font = config.fontFor(locale);
+
+  final captures = Directory('build/screenshots');
+  if (!captures.existsSync()) {
+    stderr.writeln('no build/screenshots — capture before captioning');
+    exit(1);
+  }
+
+  final sources =
+      captures
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.png'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
+
+  if (sources.isEmpty) {
+    // A green run with an empty listing is indistinguishable from a working
+    // one. That is the failure this whole harness exists to prevent.
+    stderr.writeln('build/screenshots holds no PNGs');
+    exit(1);
+  }
+
+  final out = Directory(destination);
+  if (!dryRun) {
+    // Replaced wholesale rather than merged: a screenshot removed from the
+    // test should disappear from the listing too.
+    if (out.existsSync()) out.deleteSync(recursive: true);
+    out.createSync(recursive: true);
+  }
+
+  for (final source in sources) {
+    final name = source.uri.pathSegments.last;
+    final id = sceneIdOf(name);
+    final scene = config.scene(id);
+
+    if (scene == null) {
+      stderr.writeln('no scene "$id" in headlines.json — leaving it bare');
+    }
+
+    final size = pngSize(source);
+    if (size == null) {
+      stderr.writeln('$name is not a readable PNG');
+      exit(1);
+    }
+
+    final headline = scene?.headline[locale] ?? '';
+    final subhead = scene?.subhead[locale] ?? '';
+
+    stdout.writeln('${size.width}x${size.height}  $name  "$headline"');
+    if (dryRun) continue;
+
+    // Checked per image because coverage is per string: a font can set the
+    // Latin headline and draw none of the Devanagari one.
+    for (final text in [headline, subhead]) {
+      if (text.isEmpty) continue;
+      final problem = await captionProblem(font: font, text: text);
+      if (problem != null) {
+        stderr.writeln(
+          '$problem\n'
+          'Text: "$text"  Locale: $locale  Font: $font\n'
+          'Set a font for "$locale" under "fonts" in '
+          'screenshots/headlines.json that covers this script '
+          '(Noto-Sans-Devanagari for Nepali), and make sure whatever runs '
+          'this installs it. `magick -list font` shows what is available.',
+        );
+        exit(1);
+      }
+    }
+
+    final result = await Process.run(
+      'magick',
+      magickArgs(
+        source: source.path,
+        target: '$destination/$name',
+        size: size,
+        config: config,
+        font: font,
+        headline: headline,
+        subhead: subhead,
+      ),
+    );
+    if (result.exitCode != 0) {
+      stderr.writeln('magick failed for $name:\n${result.stderr}');
+      exit(1);
+    }
+  }
+
+  stdout.writeln('${sources.length} image(s) -> $destination');
+}
+
+/// Why [font] cannot set [text], or null when it can.
+///
+/// Two different failures, and only one of them is loud. A font that is not
+/// installed makes ImageMagick error. A font that *is* installed but has no
+/// glyphs for the script fails silently: it renders a fully transparent
+/// caption and still writes a perfectly valid file. So this measures ink
+/// rather than trusting an exit code.
+Future<String?> captionProblem({
+  required String font,
+  required String text,
+}) async {
+  final result = await Process.run('magick', [
+    '-background', 'none',
+    '-fill', 'white',
+    '-font', font,
+    '-size', '600x120',
+    '-gravity', 'center',
+    'caption:$text',
+    '-alpha', 'extract',
+    '-format', '%[fx:mean]',
+    'info:',
+  ]);
+
+  if (result.exitCode != 0) {
+    return 'ImageMagick could not render with the font "$font" — most often '
+        'it is simply not installed.';
+  }
+
+  final mean = double.tryParse('${result.stdout}'.trim());
+  if (mean == null) {
+    return 'Could not measure what the font "$font" drew.';
+  }
+  if (mean <= 0) {
+    return 'The font "$font" is installed but drew nothing — it has no glyphs '
+        'for this script. The caption would come out blank, which still '
+        'produces a valid image file, so nothing else would catch it.';
+  }
+  return null;
+}
+
+/// `01_home.png` -> `home`. The numeric prefix is capture order, which the
+/// store shows them in; the id after it is what headlines.json keys on.
+String sceneIdOf(String fileName) {
+  final withoutExtension = fileName.replaceAll(RegExp(r'\.png$'), '');
+  final underscore = withoutExtension.indexOf('_');
+  return underscore == -1
+      ? withoutExtension
+      : withoutExtension.substring(underscore + 1);
+}
+
+/// Width and height straight out of the PNG header.
+///
+/// The IHDR chunk always starts at byte 16, so this avoids shelling out to
+/// `identify` just to read two integers.
+({int width, int height})? pngSize(File file) {
+  final bytes = file.readAsBytesSync();
+  if (bytes.length < 24) return null;
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  for (var i = 0; i < signature.length; i++) {
+    if (bytes[i] != signature[i]) return null;
+  }
+  int be32(int at) =>
+      (bytes[at] << 24) |
+      (bytes[at + 1] << 16) |
+      (bytes[at + 2] << 8) |
+      bytes[at + 3];
+  return (width: be32(16), height: be32(20));
+}
+
+/// The ImageMagick invocation for one capture.
+///
+/// Everything scales off the capture's own size, so this holds whatever
+/// resolution the emulator or device produced.
+///
+/// Text goes through `caption:` rather than `-annotate`, which is what makes a
+/// headline longer than one line wrap instead of running off the edge. It also
+/// sizes the type to fit the box, so there is no point size to keep in step
+/// with the capture resolution.
+List<String> magickArgs({
+  required String source,
+  required String target,
+  required ({int width, int height}) size,
+  required Config config,
+  required String font,
+  required String headline,
+  required String subhead,
+}) {
+  final canvasWidth = size.width;
+  final margin = canvasWidth ~/ 12;
+  final copyWidth = canvasWidth - margin * 2;
+
+  // The shot is scaled down for breathing room, so the canvas has to be sized
+  // from its *scaled* height. Using the raw height leaves a dead band at the
+  // bottom the width of the difference.
+  final shotWidth = canvasWidth * 84 ~/ 100;
+  final shotHeight = size.height * shotWidth ~/ size.width;
+
+  final headlineHeight = canvasWidth ~/ 7;
+  final subheadHeight = subhead.isEmpty ? 0 : canvasWidth ~/ 14;
+  final copyHeight = margin + headlineHeight + subheadHeight + margin;
+  final canvasHeight = copyHeight + shotHeight + margin;
+
+  return [
+    '-size', '${canvasWidth}x$canvasHeight',
+    'xc:${config.background}',
+
+    if (headline.isNotEmpty) ...[
+      '(',
+      '-background', 'none',
+      '-fill', config.headlineColor,
+      '-font', font,
+      '-size', '${copyWidth}x$headlineHeight',
+      '-gravity', 'center',
+      'caption:$headline',
+      ')',
+      '-gravity', 'north', '-geometry', '+0+$margin', '-composite',
+    ],
+
+    if (subhead.isNotEmpty) ...[
+      '(',
+      '-background', 'none',
+      '-fill', config.subheadColor,
+      '-font', font,
+      '-size', '${copyWidth}x$subheadHeight',
+      '-gravity', 'center',
+      'caption:$subhead',
+      ')',
+      '-gravity', 'north',
+      '-geometry', '+0+${margin + headlineHeight}',
+      '-composite',
+    ],
+
+    '(', source, '-resize', '${shotWidth}x', ')',
+    '-gravity', 'north', '-geometry', '+0+$copyHeight', '-composite',
+
+    target,
+  ];
+}
+
+/// screenshots/headlines.json.
+class Config {
+  Config({
+    required this.background,
+    required this.headlineColor,
+    required this.subheadColor,
+    required this.fonts,
+    required this.scenes,
+  });
+
+  factory Config.load(File file) {
+    if (!file.existsSync()) {
+      stderr.writeln('missing ${file.path}');
+      exit(1);
+    }
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    return Config(
+      background: json['background'] as String? ?? '#000000',
+      headlineColor: json['headlineColor'] as String? ?? '#FFFFFF',
+      subheadColor: json['subheadColor'] as String? ?? '#AAAAAA',
+      fonts: {
+        for (final entry in (json['fonts'] as Map? ?? const {}).entries)
+          entry.key.toString(): entry.value.toString(),
+      },
+      scenes: [
+        for (final scene in (json['scenes'] as List? ?? const []))
+          Scene.fromJson(scene as Map<String, dynamic>),
+      ],
+    );
+  }
+
+  final String background;
+  final String headlineColor;
+  final String subheadColor;
+
+  /// ImageMagick font names by locale, plus a `default`. Names, not paths —
+  /// `magick -list font` shows what the machine has.
+  ///
+  /// Per locale because coverage is per script: the font that sets an English
+  /// headline will not necessarily draw a Devanagari one.
+  final Map<String, String> fonts;
+
+  final List<Scene> scenes;
+
+  String fontFor(String locale) =>
+      fonts[locale] ?? fonts['default'] ?? 'DejaVu-Sans';
+
+  Scene? scene(String id) {
+    for (final scene in scenes) {
+      if (scene.id == id) return scene;
+    }
+    return null;
+  }
+}
+
+class Scene {
+  const Scene({
+    required this.id,
+    required this.headline,
+    required this.subhead,
+  });
+
+  factory Scene.fromJson(Map<String, dynamic> json) => Scene(
+    id: json['id'] as String,
+    headline: _strings(json['headline']),
+    subhead: _strings(json['subhead']),
+  );
+
+  final String id;
+  final Map<String, String> headline;
+  final Map<String, String> subhead;
+
+  static Map<String, String> _strings(Object? value) => {
+    if (value is Map)
+      for (final entry in value.entries)
+        entry.key.toString(): entry.value?.toString() ?? '',
+  };
+}
+
+String? _option(List<String> args, String name) {
+  final index = args.indexOf(name);
+  if (index == -1 || index + 1 >= args.length) return null;
+  return args[index + 1];
+}

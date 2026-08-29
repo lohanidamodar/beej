@@ -1,0 +1,39 @@
+# Composites the store headline over each raw capture.
+#
+# The work is in tool/caption_screenshots.dart rather than inline shell: it has
+# real branching, the toolchain is already installed, and a Dart script can be
+# run and inspected locally with --dry-run before anyone trusts it in CI.
+
+name: Caption screenshots
+description: Composite headlines over raw captures and place them for upload
+
+inputs:
+  locale:
+    description: Locale key in screenshots/headlines.json
+    required: true
+  destination:
+    description: Where the finished images should end up
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install ImageMagick
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          brew install imagemagick
+        else
+          sudo apt-get update
+          # The fonts headlines.json names. Without them ImageMagick either
+          # draws boxes or, when the font exists but lacks the script, draws
+          # nothing at all — a caption that is silently blank.
+          sudo apt-get install -y imagemagick fonts-dejavu-core fonts-noto-core
+        fi
+
+    - name: Composite
+      shell: bash
+      run: |
+        dart run tool/caption_screenshots.dart \
+          --locale "${{ inputs.locale }}" \
+          --out "${{ inputs.destination }}"

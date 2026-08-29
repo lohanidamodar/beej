@@ -7,10 +7,9 @@
 .atom/
 .build/
 
-# Raw and framed captures are build output; only the framing config and the
-# final images under the store metadata directories belong in git.
-fastlane/screenshots/**/*.png
-!fastlane/screenshots/background.png
+# goldie's working output. The finished images are committed under the store
+# metadata directories instead.
+out/
 .buildlog/
 .history
 .svn/

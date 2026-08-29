@@ -8,8 +8,8 @@
 # genuinely needs a Mac.
 #
 #   1. boots an emulator and runs integration_test/screenshot_test.dart
-#   2. frames the captures with fastlane frameit, using the committed config
-#      in fastlane/screenshots/
+#   2. composites the headline from screenshots/headlines.json over each
+#      capture — the same copy goldie uses for the App Store
 #   3. commits the framed images where `supply` uploads them from
 
 name: Screenshots (Android)
@@ -29,12 +29,11 @@ on:
         description: "Android API level to emulate"
         default: "34"
       profile:
-        # frameit picks a device frame by *exact* resolution, so the emulator
-        # profile has to be one it knows. pixel_5 is 1080x2340 and is the
-        # newest Android frame fastlane ships; pixel_6 (1080x2400) has no
-        # frame and fails the framing step.
-        description: "Emulator device profile (must be a size frameit knows)"
-        default: "pixel_5"
+        # Free choice now that nothing matches on exact resolution — the
+        # compositor scales to whatever the emulator produced. Play wants
+        # 320-3840px on the long edge.
+        description: "Emulator device profile"
+        default: "pixel_6"
       commit:
         description: "Commit the result back to the branch"
         type: boolean
@@ -92,8 +91,8 @@ jobs:
               --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
               -d emulator-5554
 
-      - name: Frame them
-        uses: ./.github/actions/frame-screenshots
+      - name: Caption them
+        uses: ./.github/actions/caption-screenshots
         with:
           locale: ${{ inputs.locale }}
           destination: android/fastlane/metadata/android/${{ inputs.locale }}/images/phoneScreenshots

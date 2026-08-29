@@ -840,8 +840,8 @@ void main() {
           platforms: {TargetPlatform.android, TargetPlatform.ios},
         ),
       );
-      // Ubuntu with KVM is 2-3x faster and much cheaper than macOS, so the
-      // Android half must not drift onto a Mac runner.
+      // Ubuntu with KVM is 2-3x faster and much cheaper than macOS. Only
+      // goldie genuinely needs a Mac, because it drives an iOS simulator.
       expect(
         contentOf(plan, '.github/workflows/screenshots-android.yml'),
         contains('runs-on: ubuntu-latest'),
@@ -856,9 +856,12 @@ void main() {
       final plan = await planFor(
         const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
       );
-      final paths = plan.files.map((f) => f.path);
+      final paths = pathsOf(plan);
       expect(paths, contains('.github/workflows/screenshots-android.yml'));
       expect(paths, isNot(contains('.github/workflows/screenshots-ios.yml')));
+      // goldie is iOS-only by construction — its whole device layer is
+      // `xcrun simctl` — so an Android-only app has no use for its config.
+      expect(paths, isNot(contains('goldie.config.ts')));
     });
 
     test('GitHub expressions survive rendering', () async {
@@ -869,101 +872,113 @@ void main() {
       );
     });
 
-    test('locale options come from the spec', () async {
-      final english = await planFor(
-        const SpecInput(name: 'a1', locales: ['en']),
-      );
-      expect(
-        contentOf(english, '.github/workflows/screenshots-android.yml'),
-        isNot(contains('ne-NP')),
-      );
-
-      final both = await planFor(
-        const SpecInput(name: 'a1', locales: ['en', 'ne']),
-      );
-      expect(
-        contentOf(both, '.github/workflows/screenshots-android.yml'),
-        contains('ne-NP'),
-      );
-    });
-
-    test('title keys match the numbering the capture writes', () async {
+    test('each store offers only the locales it accepts', () async {
       final plan = await planFor(
         const SpecInput(
           name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+          locales: ['en', 'ne'],
+        ),
+      );
+      expect(
+        contentOf(plan, '.github/workflows/screenshots-android.yml'),
+        contains('ne-NP'),
+      );
+      // App Store Connect has no Nepali; offering it would capture into a
+      // directory deliver refuses.
+      expect(
+        contentOf(plan, '.github/workflows/screenshots-ios.yml'),
+        isNot(contains('ne-NP')),
+      );
+    });
+
+    test('one copy file feeds both stores', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
           tabs: [
             TabSpec(id: 'home', label: 'Home', icon: 'house'),
             TabSpec(id: 'notes', label: 'Notes', icon: 'note'),
           ],
         ),
       );
-      final titles = contentOf(
-        plan,
-        'fastlane/screenshots/en-US/title.strings',
-      );
-      // frameit matches a key as a substring of the full path, so a bare
-      // "home" would also match every file under /home/... on a Linux
-      // runner. The prefix is what keeps each key distinctive.
-      expect(titles, contains('"01_home"'));
-      expect(titles, contains('"02_notes"'));
-      expect(titles, contains('"03_settings"'));
 
-      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
-      expect(frame, contains('"01_home"'));
-      expect(frame, contains('"03_settings"'));
+      final headlines = contentOf(plan, 'screenshots/headlines.json');
+      final decoded = jsonDecode(headlines) as Map<String, dynamic>;
+      final ids = [
+        for (final scene in decoded['scenes'] as List)
+          (scene as Map)['id'] as String,
+      ];
+      // Scene ids are what ties the capture filenames, the compositor and the
+      // argent flow names together.
+      expect(ids, ['home', 'notes', 'settings']);
+
+      // goldie reads the same file rather than carrying its own copy, so the
+      // two listings cannot say different things.
+      expect(
+        contentOf(plan, 'goldie.config.ts'),
+        contains('screenshots/headlines.json'),
+      );
     });
 
-    test('the framing config and the action agree on the background', () async {
-      final plan = await planFor(const SpecInput(name: 'a1'));
-      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
+    test('a font is named per locale, not assumed', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', locales: ['en', 'ne']),
+      );
+      final decoded = jsonDecode(
+        contentOf(plan, 'screenshots/headlines.json'),
+      ) as Map<String, dynamic>;
+      final fonts = decoded['fonts'] as Map<String, dynamic>;
+
+      // Font coverage is per script. A font that sets an English headline
+      // will draw a Devanagari one as nothing at all — a blank caption that
+      // still produces a valid file, so only an explicit choice catches it.
+      expect(fonts['default'], isNotNull);
+      expect(fonts['ne-NP'], contains('Devanagari'));
+    });
+
+    test('the Android action installs the fonts it names', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', locales: ['en', 'ne']),
+      );
       final action = contentOf(
         plan,
-        '.github/actions/frame-screenshots/action.yml',
+        '.github/actions/caption-screenshots/action.yml',
       );
-
-      // frameit resolves `background` relative to the Framefile's own folder,
-      // so the path in the config and the file the action paints have to be
-      // the same one. They live in different templates, which is exactly how
-      // they would drift apart unnoticed.
-      expect(frame, contains('"background": "./background.png"'));
-      expect(action, contains('fastlane/screenshots/background.png'));
+      expect(action, contains('fonts-noto-core'));
+      expect(action, contains('fonts-dejavu-core'));
     });
 
-    test('every Framefile filter has a matching title', () async {
-      final plan = await planFor(const SpecInput(name: 'a1'));
-      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
-      final titles = contentOf(
-        plan,
-        'fastlane/screenshots/en-US/title.strings',
+    test('the compositor ships for Android and not for iOS-only', () async {
+      final android = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
       );
+      expect(pathsOf(android), contains('tool/caption_screenshots.dart'));
 
-      // In complex framing mode frameit skips any screenshot with no title,
-      // so a filter without a matching key silently drops that screenshot
-      // from the listing.
-      final filters = RegExp(r'"filter": "([^"]+)"')
-          .allMatches(frame)
-          .map((m) => m.group(1)!);
-      expect(filters, isNotEmpty);
-      for (final filter in filters) {
-        expect(
-          titles,
-          contains('"$filter"'),
-          reason: 'no headline for $filter',
-        );
-      }
+      // iOS framing is goldie's job; there is nothing for the compositor to do.
+      final ios = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.ios}),
+      );
+      expect(
+        pathsOf(ios),
+        isNot(contains('.github/actions/caption-screenshots/action.yml')),
+      );
     });
-    test('the framing config ships even without CI', () async {
+
+    test('the copy file ships even without CI', () async {
       final plan = await planFor(
         const SpecInput(name: 'a1', githubWorkflow: false),
       );
-      final paths = plan.files.map((f) => f.path);
-      expect(paths, contains('fastlane/screenshots/Framefile.json'));
+      final paths = pathsOf(plan);
+      expect(paths, contains('screenshots/headlines.json'));
       expect(
         paths,
         isNot(contains('.github/workflows/screenshots-android.yml')),
       );
     });
   });
+
   group('App Store metadata', () {
     test('the listing lives in the repo, like the Play one', () async {
       final plan = await planFor(

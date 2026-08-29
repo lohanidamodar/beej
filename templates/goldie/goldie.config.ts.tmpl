@@ -1,0 +1,71 @@
+// App Store screenshots, built by goldie: https://github.com/kacperkapusciak/goldie
+//
+// Headline copy is NOT duplicated here. It is read from
+// screenshots/headlines.json, which the Android workflow also composites from,
+// so the two store listings cannot say different things.
+//
+// No `import type { GoldieConfig }` — goldie is installed globally in CI and
+// the type would not resolve. The shape is checked by goldie itself.
+
+import { readFileSync } from "node:fs";
+
+const copy = JSON.parse(
+  readFileSync(new URL("./screenshots/headlines.json", import.meta.url), "utf8"),
+) as {
+  scenes: {
+    id: string;
+    headline: Record<string, string>;
+    subhead: Record<string, string>;
+  }[];
+};
+
+const config = {
+  appRoot: new URL(".", import.meta.url).pathname,
+
+  // Written by `flutter build ios --simulator --release`. Release on purpose:
+  // a debug build needs a host and paints banners into the captures.
+  appPath: "build/ios/iphonesimulator/Runner.app",
+  bundleId: "{{applicationId}}",
+
+  // 1320 x 2868, which is the 6.9" screenshot Apple requires.
+  devices: ["iphone-6.9"],
+  // App Store languages only. Apple's list has no Nepali, so this stays
+  // English even when the app and the Play listing are bilingual.
+  locales: [{{#appStoreLocales}}"{{code}}", {{/appStoreLocales}}],
+  appearance: "light",
+
+  frame: { variant: "17-pro-blue" },
+
+  theme: {
+    background: "linear-gradient(160deg, #E8F1FF 0%, #F7FAFF 55%, #FFFFFF 100%)",
+    headlineColor: "#0E1B2A",
+    subheadColor: "#5A6A7D",
+    fontFamily: '-apple-system, "SF Pro Display", system-ui, sans-serif',
+    layout: "classic",
+  },
+
+  store: {
+    name: "{{appName}}",
+    subtitle: { "en-US": "" },
+    developer: "",
+    category: "Productivity",
+    price: "Free",
+    description: { "en-US": "{{description}}" },
+  },
+
+  // One screenshot per scene, in store-page order. `flow` names an argent flow
+  // under .argent/flows — goldie replays it and captures after its last step,
+  // so a flow has to exist for every scene here or the run fails.
+  //
+  // No `preview` scene yet: Apple wants 15-30 seconds of plain screen
+  // recording, which needs its own flows. See screenshots/README.md.
+  scenes: copy.scenes.map((scene) => ({
+    kind: "screenshot" as const,
+    id: scene.id,
+    flow: `store-${scene.id}`,
+    headline: scene.headline,
+    subhead: scene.subhead,
+  })),
+};
+
+export default config;
