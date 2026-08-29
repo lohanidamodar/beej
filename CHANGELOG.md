@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0
+
+Published from CI, and the first release the automated workflow produced.
+
+No functional change from 0.1.0 — the version signals that the CLI surface
+(`create`, `spec`, `bricks`, `config`), the spec-file schema and the generated
+project layout are ones to depend on, and that breaking them means a major
+bump.
+
 ## 0.1.0
 
 First release.
