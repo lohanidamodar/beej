@@ -181,10 +181,18 @@ public. The release workflow is written into the project rather than calling a
 shared reusable workflow, so nothing in a generated repo depends on private
 infrastructure.
 
-## Known limitation
+## Known limitations
 
-`designSystem: popup_bits_design` is rejected. That package pins
-`material_ui: ^0.0.1` — the old one-line re-export shim — which cannot resolve
-alongside the 1.x line beej generates against. Widening its constraint to
-`^1.0.0` upstream is the fix; until then, `designSystem: local` generates
-project-owned tokens.
+**The screenshot workflows have never run on a runner.** Everything upstream of
+them is verified — capture, the job builder, and moksha rendering correct sizes
+for every device family — but emulator boot, the moksha checkout and
+`gh pr create` are unproven. Expect to fix something the first time.
+
+**No App Store preview video.** moksha renders stills. Apple's 15-30 second
+recording is a separate job.
+
+**`material_ui` is an unusual choice.** It is Material decoupled from the
+Flutter SDK, and everything generated here imports it instead of
+`package:flutter/material.dart`. If you want plain Flutter Material, beej is
+the wrong starting point — that assumption runs through the templates, the
+tests and the docs, and is not a flag you can flip.
