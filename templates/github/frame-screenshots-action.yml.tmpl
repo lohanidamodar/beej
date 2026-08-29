@@ -1,0 +1,106 @@
+# Shared by both screenshot workflows, so Play and the App Store are framed by
+# the same code and end up looking like the same app.
+#
+# frameit reads Framefile.json from the screenshots root and title.strings from
+# the locale directory. Both are committed under fastlane/screenshots/ — that
+# is the "design doc" for the listing, reviewed like code.
+
+name: Frame screenshots
+description: Frame raw captures with fastlane frameit and place them for upload
+
+inputs:
+  locale:
+    description: Locale directory under fastlane/screenshots
+    required: true
+  destination:
+    description: Where the framed images should end up
+    required: true
+  background:
+    description: Background colour, used only when no background.png is committed
+    default: "#12121A"
+
+runs:
+  using: composite
+  steps:
+    - name: Install ImageMagick
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          brew install imagemagick
+        else
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+        fi
+
+    - name: Check something was captured
+      shell: bash
+      run: |
+        count=$(find build/screenshots -name '*.png' 2>/dev/null | wc -l)
+        echo "captured $count screenshot(s)"
+        # A green run with an empty listing is indistinguishable from a working
+        # one. That is the failure this whole harness exists to prevent.
+        if [ "$count" -eq 0 ]; then
+          echo "::error::no screenshots were captured"
+          exit 1
+        fi
+
+        # frameit picks a device frame by exact resolution and fails on a size
+        # it does not know, which reads as a cryptic error. Print the size up
+        # front so a mismatch is obvious rather than mysterious.
+        for f in build/screenshots/*.png; do
+          echo "  $(basename "$f") $(identify -format '%wx%h' "$f" 2>/dev/null || echo '?')"
+        done
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.2"
+
+    - name: Install fastlane
+      shell: bash
+      run: gem install fastlane --no-document
+
+    - name: Stage captures and background
+      shell: bash
+      env:
+        LOCALE: ${{ inputs.locale }}
+        BACKGROUND: ${{ inputs.background }}
+      run: |
+        dir="fastlane/screenshots/$LOCALE"
+        mkdir -p "$dir"
+        cp build/screenshots/*.png "$dir/"
+
+        # A committed background.png wins; otherwise paint a flat one so the
+        # colour lives in the workflow rather than in a binary nobody can diff.
+        if [ ! -f fastlane/screenshots/background.png ]; then
+          magick -size 1500x2600 "xc:$BACKGROUND" fastlane/screenshots/background.png
+        fi
+
+    - name: Frame
+      shell: bash
+      env:
+        LOCALE: ${{ inputs.locale }}
+      run: |
+        # frameit exits non-zero when it frames nothing, which is what we want.
+        fastlane run frameit path:"fastlane/screenshots/$LOCALE"
+
+    - name: Place the framed images
+      shell: bash
+      env:
+        LOCALE: ${{ inputs.locale }}
+        DESTINATION: ${{ inputs.destination }}
+      run: |
+        shopt -s nullglob
+        framed=(fastlane/screenshots/"$LOCALE"/*_framed.png)
+        if [ ${#framed[@]} -eq 0 ]; then
+          echo "::error::frameit produced no framed images"
+          exit 1
+        fi
+
+        # Replaced wholesale rather than merged: a screenshot removed from the
+        # test should disappear from the listing too.
+        rm -rf "$DESTINATION"
+        mkdir -p "$DESTINATION"
+        for f in "${framed[@]}"; do
+          cp "$f" "$DESTINATION/$(basename "${f%_framed.png}").png"
+        done
+        ls -la "$DESTINATION"

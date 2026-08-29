@@ -1,0 +1,104 @@
+# Capture, frame and commit App Store screenshots.
+#
+# Manual only, and macOS — the iOS simulator has no Linux equivalent, so this
+# is the one workflow that genuinely needs a Mac runner. On a private repo
+# macOS minutes bill at 10x, which is another reason it is not automatic.
+#
+#   1. boots a simulator and runs integration_test/screenshot_test.dart
+#   2. frames the captures with fastlane frameit, using the same committed
+#      config as Android, so both listings look like the same app
+#   3. commits the framed images where `deliver` uploads them from
+#
+# Apple wants 6.9" iPhone screenshots (1320 x 2868); the default simulator
+# below is that size. `xcrun simctl list devicetypes` on the runner shows what
+# the installed Xcode actually offers if you need to change it.
+
+name: Screenshots (iOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: "App Store locale directory"
+        type: choice
+        default: en-US
+        options:
+<% #playLocales %>
+          - <% code %>
+<% /playLocales %>
+      simulator:
+        description: "Simulator device name"
+        default: "iPhone 16 Pro Max"
+      commit:
+        description: "Commit the result back to the branch"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      LOCALE: ${{ inputs.locale }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "<% flutterVersion %>"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Boot the simulator
+        id: sim
+        run: |
+          xcrun simctl list devicetypes
+          udid=$(xcrun simctl create screenshots "${{ inputs.simulator }}")
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Capture
+        run: |
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshot_test.dart \
+            --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
+            -d ${{ steps.sim.outputs.udid }}
+
+      - name: Frame them
+        uses: ./.github/actions/frame-screenshots
+        with:
+          locale: ${{ inputs.locale }}
+          destination: ios/fastlane/screenshots/${{ inputs.locale }}
+
+      - name: Commit
+        if: ${{ inputs.commit }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ios/fastlane/screenshots
+          if git diff --staged --quiet; then
+            echo "screenshots unchanged; nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore: refresh App Store screenshots (${LOCALE})"
+          git push
+
+      - name: Shut the simulator down
+        if: always()
+        run: xcrun simctl delete ${{ steps.sim.outputs.udid }} || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-ios-${{ inputs.locale }}
+          path: fastlane/screenshots/${{ inputs.locale }}/
+          if-no-files-found: warn

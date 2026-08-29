@@ -1,0 +1,119 @@
+# Capture, frame and commit Play store screenshots.
+#
+# Manual only. It rewrites files in the repository, so it runs when you decide
+# the listing needs refreshing — not on every push.
+#
+# Ubuntu, not macOS: the emulator action's own guidance is that Ubuntu runners
+# with KVM are 2-3x faster than the macOS ones and a lot cheaper. Only iOS
+# genuinely needs a Mac.
+#
+#   1. boots an emulator and runs integration_test/screenshot_test.dart
+#   2. frames the captures with fastlane frameit, using the committed config
+#      in fastlane/screenshots/
+#   3. commits the framed images where `supply` uploads them from
+
+name: Screenshots (Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: "Play listing locale directory"
+        type: choice
+        default: en-US
+        options:
+<% #playLocales %>
+          - <% code %>
+<% /playLocales %>
+      api_level:
+        description: "Android API level to emulate"
+        default: "34"
+      profile:
+        # frameit picks a device frame by *exact* resolution, so the emulator
+        # profile has to be one it knows. pixel_5 is 1080x2340 and is the
+        # newest Android frame fastlane ships; pixel_6 (1080x2400) has no
+        # frame and fails the framing step.
+        description: "Emulator device profile (must be a size frameit knows)"
+        default: "pixel_5"
+      commit:
+        description: "Commit the result back to the branch"
+        type: boolean
+        default: true
+
+# Needed to push the result. Pushes made with GITHUB_TOKEN do not retrigger
+# workflows, so this cannot loop.
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      LOCALE: ${{ inputs.locale }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "<% flutterVersion %>"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Capture on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ inputs.api_level }}
+          arch: x86_64
+          profile: ${{ inputs.profile }}
+          disable-animations: true
+          script: |
+            # en-US -> en. The app's locale codes are the ARB ones, not the
+            # store's directory names.
+            flutter drive \
+              --driver=test_driver/integration_test.dart \
+              --target=integration_test/screenshot_test.dart \
+              --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
+              -d emulator-5554
+
+      - name: Frame them
+        uses: ./.github/actions/frame-screenshots
+        with:
+          locale: ${{ inputs.locale }}
+          destination: android/fastlane/metadata/android/${{ inputs.locale }}/images/phoneScreenshots
+
+      - name: Commit
+        if: ${{ inputs.commit }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/fastlane/metadata
+          if git diff --staged --quiet; then
+            echo "screenshots unchanged; nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore: refresh Play screenshots (${LOCALE})"
+          git push
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-android-${{ inputs.locale }}
+          path: fastlane/screenshots/${{ inputs.locale }}/
+          if-no-files-found: warn

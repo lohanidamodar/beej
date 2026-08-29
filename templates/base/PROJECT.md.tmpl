@@ -287,7 +287,53 @@ Output lands in `build/screenshots/`. Edit the nav steps in
 `integration_test/screenshot_test.dart` as the app grows; the helper fails the
 run if it captures nothing, because a green run with an empty store listing is
 indistinguishable from a working one.
+
+**Framing and headlines** live in `fastlane/screenshots/` — `Framefile.json`
+for the bezel, background and type, and `<locale>/title.strings` for the
+headline under each capture. Both are committed, so how the listing looks is
+reviewed like code. `fastlane/screenshots/README.md` explains the one trap
+worth knowing: frameit matches a title key as a substring of the screenshot's
+*full path*, so the numeric prefix in `"01_home"` is load-bearing.
+
+Two manual workflows do the whole thing on a runner and commit the result:
+**Screenshots (Android)** on Ubuntu, and **Screenshots (iOS)** on macOS. Each
+takes a locale, captures, frames, and pushes the images into the directory the
+upload lane reads. They never run on push — they rewrite the repository.
 {{/screenshots}}
+{{#ios}}
+
+### App Store screenshots — goldie
+
+The capture above is the path for Play. For the **App Store** listing,
+[goldie](https://github.com/kacperkapusciak/goldie) does more than capture: it
+replays flows on a simulator, frames them with a device bezel, background and
+headline, joins them into the preview video Apple asks for, and checks the
+result against Apple's upload rules.
+
+It needs **macOS with iOS simulators**, Node 20+ and ffmpeg, so it is a Mac-side
+tool. It is not part of this repo and must not be vendored into it — goldie
+ships its own agent skill, so install it once per machine and let it update
+itself:
+
+```sh
+npm i -g goldie
+```
+
+```
+/plugin marketplace add kacperkapusciak/goldie   # Claude Code
+/plugin install goldie@goldie
+```
+
+Then, from the repo root, ask for `create App Store screenshots using goldie`.
+
+Two things that will bite you: capture from a **release** build, because debug
+builds paint banners into the frames; and the recorded flows break whenever the
+UI changes, so expect to repair them rather than treating them as fixed.
+
+goldie is new (first published August 2026). Check the output against the
+listing rules yourself before uploading rather than trusting the verifier
+alone — the `store-readiness` skill covers what a submission must satisfy.
+{{/ios}}
 
 Release builds are run only when explicitly asked:
 

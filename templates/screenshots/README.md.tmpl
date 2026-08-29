@@ -1,0 +1,96 @@
+# Store screenshots
+
+Everything about how {{appName}}'s store screenshots look lives here, in git,
+reviewed like code. Nobody opens a design tool to change a headline.
+
+## The pieces
+
+| File | What it controls |
+|---|---|
+| `Framefile.json` | bezel, background, padding, title colour and font |
+| `<locale>/title.strings` | the headline under each screenshot, per locale |
+| `background.png` | optional. Commit one to override the flat colour the workflow paints |
+
+The screenshots themselves come from `integration_test/screenshot_test.dart`.
+Add a destination there and it appears in the listing; the numbered capture
+name is what ties the three together.
+
+## Changing a headline
+
+Edit `<locale>/title.strings`. Keys are the capture filenames:
+
+```
+"01_home" = "Everything in one place";
+```
+
+**Keep the numeric prefix.** frameit matches a key as a case-insensitive
+substring of the screenshot's *full path*, so a bare `"home"` would also match
+every file under `/home/runner/...` on a Linux runner and put that headline on
+all of them.
+
+These are store copy, not UI strings: write the benefit, not the feature name.
+The `app-store-optimization` skill covers what belongs here — and note that
+most people never scroll past the first two.
+
+## Regenerating
+
+From the repo, run the **Screenshots (Android)**{{#ios}} or **Screenshots
+(iOS)**{{/ios}} workflow from the Actions tab. Both are manual, take a locale,
+and commit the framed result to the branch you ran them on.
+{{#ios}}
+Android runs on Ubuntu; only iOS needs a macOS runner.
+{{/ios}}
+
+Locally:
+
+```sh
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshot_test.dart \
+  --dart-define=SCREENSHOT_LOCALE={{#hasNepali}}ne{{/hasNepali}}{{^hasNepali}}en{{/hasNepali}} \
+  -d <device>
+
+cd android && bundle exec fastlane screenshots locale:en-US
+```
+
+Framing needs ImageMagick (`brew install imagemagick`, or
+`apt-get install imagemagick`).
+
+## Where the output goes
+
+- Play — `android/fastlane/metadata/android/<locale>/images/phoneScreenshots/`
+{{#ios}}
+- App Store — `ios/fastlane/screenshots/<locale>/`
+{{/ios}}
+
+Both are the directories `supply`{{#ios}} and `deliver`{{/ios}} upload from, so
+a committed screenshot is already in the release path — no separate step.
+
+## Device size is not free choice
+
+frameit picks a device frame by **exact resolution** and fails on a size it
+does not recognise. That constrains which emulator and simulator you capture
+on, so the workflow defaults are not arbitrary:
+
+| Store | Capture on | Resolution |
+|---|---|---|
+| Play | `pixel_5` emulator | 1080 x 2340 |
+{{#ios}}
+| App Store | iPhone 16 Pro Max simulator | 1320 x 2868 |
+{{/ios}}
+
+Pixel 5 is the newest Android frame fastlane ships — `pixel_6` is 1080 x 2400
+and has no frame. {{#ios}}On the Apple side 1320 x 2868 is both a frameit size
+and the 6.9" screenshot Apple requires, which is a happy coincidence rather
+than a rule; iPhone 17 Pro Max is the same size. {{/ios}}If you change the
+profile, check the size against fastlane's `device_types.rb` first. The
+workflow prints every capture's dimensions before framing so a mismatch is
+obvious.
+
+## A caveat worth knowing
+
+frameit's device frames are a fixed, ageing set; they will not always be this
+year's phone. For the App Store specifically, [goldie](https://github.com/kacperkapusciak/goldie)
+has current frames, nicer layouts and can build the preview video — but it
+needs macOS and does not do Android, so it is a local Mac tool rather than
+something these workflows can run for both stores.

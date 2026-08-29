@@ -1,0 +1,13 @@
+/* Headlines drawn under each framed screenshot.
+
+   frameit matches a key as a case-insensitive substring of the screenshot's
+   full path, so these keys keep the numeric prefix the capture writes. A bare
+   "home" would also match every file under /home/... on a Linux runner.
+
+   These are store copy, not UI strings — write the benefit, not the feature.
+   The app-store-optimization skill covers what belongs here. */
+
+{{#tabs}}
+"{{screenshotKey}}" = "{{label}}";
+{{/tabs}}
+"{{screenshotSettingsKey}}" = "Settings";

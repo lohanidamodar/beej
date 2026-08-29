@@ -812,6 +812,158 @@ void main() {
       }
     });
   });
+  group('screenshot workflows', () {
+    test('both are manual only — they rewrite the repository', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      for (final path in [
+        '.github/workflows/screenshots-android.yml',
+        '.github/workflows/screenshots-ios.yml',
+      ]) {
+        final workflow = contentOf(plan, path);
+        expect(workflow, contains('workflow_dispatch'));
+        expect(workflow, isNot(contains('\n  push:')));
+        expect(workflow, isNot(contains('\n  pull_request:')));
+        // Pushing the result back needs it; nothing else here does.
+        expect(workflow, contains('contents: write'));
+      }
+    });
+
+    test('only iOS gets a macOS runner', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      // Ubuntu with KVM is 2-3x faster and much cheaper than macOS, so the
+      // Android half must not drift onto a Mac runner.
+      expect(
+        contentOf(plan, '.github/workflows/screenshots-android.yml'),
+        contains('runs-on: ubuntu-latest'),
+      );
+      expect(
+        contentOf(plan, '.github/workflows/screenshots-ios.yml'),
+        contains('runs-on: macos-latest'),
+      );
+    });
+
+    test('the iOS workflow is absent without an iOS target', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
+      );
+      final paths = plan.files.map((f) => f.path);
+      expect(paths, contains('.github/workflows/screenshots-android.yml'));
+      expect(paths, isNot(contains('.github/workflows/screenshots-ios.yml')));
+    });
+
+    test('GitHub expressions survive rendering', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      expect(
+        contentOf(plan, '.github/workflows/screenshots-android.yml'),
+        contains(r'${{ inputs.locale }}'),
+      );
+    });
+
+    test('locale options come from the spec', () async {
+      final english = await planFor(
+        const SpecInput(name: 'a1', locales: ['en']),
+      );
+      expect(
+        contentOf(english, '.github/workflows/screenshots-android.yml'),
+        isNot(contains('ne-NP')),
+      );
+
+      final both = await planFor(
+        const SpecInput(name: 'a1', locales: ['en', 'ne']),
+      );
+      expect(
+        contentOf(both, '.github/workflows/screenshots-android.yml'),
+        contains('ne-NP'),
+      );
+    });
+
+    test('title keys match the numbering the capture writes', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          tabs: [
+            TabSpec(id: 'home', label: 'Home', icon: 'house'),
+            TabSpec(id: 'notes', label: 'Notes', icon: 'note'),
+          ],
+        ),
+      );
+      final titles = contentOf(
+        plan,
+        'fastlane/screenshots/en-US/title.strings',
+      );
+      // frameit matches a key as a substring of the full path, so a bare
+      // "home" would also match every file under /home/... on a Linux
+      // runner. The prefix is what keeps each key distinctive.
+      expect(titles, contains('"01_home"'));
+      expect(titles, contains('"02_notes"'));
+      expect(titles, contains('"03_settings"'));
+
+      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
+      expect(frame, contains('"01_home"'));
+      expect(frame, contains('"03_settings"'));
+    });
+
+    test('the framing config and the action agree on the background', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
+      final action = contentOf(
+        plan,
+        '.github/actions/frame-screenshots/action.yml',
+      );
+
+      // frameit resolves `background` relative to the Framefile's own folder,
+      // so the path in the config and the file the action paints have to be
+      // the same one. They live in different templates, which is exactly how
+      // they would drift apart unnoticed.
+      expect(frame, contains('"background": "./background.png"'));
+      expect(action, contains('fastlane/screenshots/background.png'));
+    });
+
+    test('every Framefile filter has a matching title', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final frame = contentOf(plan, 'fastlane/screenshots/Framefile.json');
+      final titles = contentOf(
+        plan,
+        'fastlane/screenshots/en-US/title.strings',
+      );
+
+      // In complex framing mode frameit skips any screenshot with no title,
+      // so a filter without a matching key silently drops that screenshot
+      // from the listing.
+      final filters = RegExp(r'"filter": "([^"]+)"')
+          .allMatches(frame)
+          .map((m) => m.group(1)!);
+      expect(filters, isNotEmpty);
+      for (final filter in filters) {
+        expect(
+          titles,
+          contains('"$filter"'),
+          reason: 'no headline for $filter',
+        );
+      }
+    });
+    test('the framing config ships even without CI', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', githubWorkflow: false),
+      );
+      final paths = plan.files.map((f) => f.path);
+      expect(paths, contains('fastlane/screenshots/Framefile.json'));
+      expect(
+        paths,
+        isNot(contains('.github/workflows/screenshots-android.yml')),
+      );
+    });
+  });
 
   group('brick hygiene', () {
     test('the covering specs really do reach every brick', () {

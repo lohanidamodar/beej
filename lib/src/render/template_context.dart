@@ -27,6 +27,10 @@ Map<String, dynamic> buildContext(AppSpec spec) {
         'neLabel': nepaliTabLabel(spec.tabs[i].id) ?? spec.tabs[i].label,
         'neTranslated': nepaliTabLabel(spec.tabs[i].id) != null,
         'index': i,
+        // Matches the file ScreenshotHelper writes: `NN_<id>.png`, 1-based
+        // and zero-padded. Used as the frameit title key.
+        'screenshotKey':
+            '${(i + 1).toString().padLeft(2, '0')}_${spec.tabs[i].id}',
         'isFirst': i == 0,
         'isLast': i == spec.tabs.length - 1,
         'notLast': i != spec.tabs.length - 1,
@@ -72,6 +76,16 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'tabsAndDrawer': spec.navStyle == NavStyle.tabsAndDrawer,
     'tabs': tabs,
     'tabCount': spec.tabs.length,
+    // Play listing locale directories, as maps rather than bare strings so
+    // templates can use `{{code}}` — mustache's `{{.}}` for scalar lists is
+    // not worth relying on here.
+    'playLocales': [
+      const {'code': 'en-US'},
+      if (spec.locales.contains('ne')) const {'code': 'ne-NP'},
+    ],
+    // Settings is captured last, after every tab.
+    'screenshotSettingsKey':
+        '${(spec.tabs.length + 1).toString().padLeft(2, '0')}_settings',
 
     'sqflite': spec.usesSqflite,
     'hasDatabase': spec.database != DatabaseKind.none,

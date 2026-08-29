@@ -6,6 +6,7 @@ import 'package:picons/picons.dart';
 {{/picons}}
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:{{name}}/core/app.dart';
+import 'package:{{name}}/core/settings/app_settings.dart';
 import 'package:{{name}}/core/settings/settings_controller.dart';
 
 import 'screenshot_helper.dart';
@@ -30,6 +31,11 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final screenshots = ScreenshotHelper(binding);
 
+  // Which locale to capture, passed by the screenshot workflows as
+  // `--dart-define=SCREENSHOT_LOCALE=ne`. Empty means "follow the device",
+  // which is what a local run without the flag gets.
+  const localeCode = String.fromEnvironment('SCREENSHOT_LOCALE');
+
   testWidgets('store screenshots', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();
@@ -38,6 +44,12 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(preferences),
+          if (localeCode.isNotEmpty)
+            settingsControllerProvider.overrideWith(
+              () => SettingsController(
+                initial: const AppSettings(localeCode: localeCode),
+              ),
+            ),
         ],
         child: const {{pascalName}}App(),
       ),

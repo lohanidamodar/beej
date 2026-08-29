@@ -161,19 +161,62 @@ class ScreenshotsBrick extends Brick {
   bool appliesTo(AppSpec spec) => spec.tooling.screenshots;
 
   @override
-  List<TemplateFile> files(AppSpec spec) => const [
-    TemplateFile(
+  List<TemplateFile> files(AppSpec spec) => [
+    const TemplateFile(
       'screenshots/screenshot_helper.dart.tmpl',
       'integration_test/screenshot_helper.dart',
     ),
-    TemplateFile(
+    const TemplateFile(
       'screenshots/screenshot_test.dart.tmpl',
       'integration_test/screenshot_test.dart',
     ),
-    TemplateFile(
+    const TemplateFile(
       'screenshots/integration_test_driver.dart.tmpl',
       'test_driver/integration_test.dart',
     ),
+
+    // How the captures are framed: device bezel, background and the headline
+    // under each one. Committed, so listing design is reviewed like code.
+    const TemplateFile(
+      'screenshots/Framefile.json.tmpl',
+      'fastlane/screenshots/Framefile.json',
+    ),
+    const TemplateFile(
+      'screenshots/README.md.tmpl',
+      'fastlane/screenshots/README.md',
+    ),
+    const TemplateFile(
+      'screenshots/title.strings.tmpl',
+      'fastlane/screenshots/en-US/title.strings',
+    ),
+    if (spec.locales.contains('ne'))
+      const TemplateFile(
+        'screenshots/title_ne.strings.tmpl',
+        'fastlane/screenshots/ne-NP/title.strings',
+      ),
+
+    // The capture workflows. Manual only — they rewrite the repository.
+    if (spec.tooling.githubWorkflow) ...[
+      // Shared, so Play and the App Store are framed by the same code and
+      // come out looking like the same app.
+      const TemplateFile(
+        'github/frame-screenshots-action.yml.tmpl',
+        '.github/actions/frame-screenshots/action.yml',
+        raw: true,
+      ),
+      if (spec.hasAndroid)
+        const TemplateFile(
+          'github/screenshots-android.yml.tmpl',
+          '.github/workflows/screenshots-android.yml',
+          delimiters: '<% %>',
+        ),
+      if (spec.hasIos)
+        const TemplateFile(
+          'github/screenshots-ios.yml.tmpl',
+          '.github/workflows/screenshots-ios.yml',
+          delimiters: '<% %>',
+        ),
+    ],
   ];
 
   @override
