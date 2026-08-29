@@ -292,56 +292,25 @@ indistinguishable from a working one.
 both stores read it. Two manual workflows do the rest on a runner and commit
 the result — they never run on push, because they rewrite the repository.
 
-| | Play | App Store |
+| Workflow | Runner | Families |
 |---|---|---|
-| Workflow | **Screenshots (Android)**, `ubuntu-latest` | **Screenshots (iOS)**, `macos-latest` |
-| Capture | this integration test, on an emulator | goldie, replaying argent flows |
-| Framing | `tool/caption_screenshots.dart` | goldie's bezel and background |
-
-Two different tools because no tool does both: goldie is iOS-only by
-construction — its device layer is `xcrun simctl` and its device list is one
-entry — and nothing on the Play side produces App Store preview videos. What
-keeps the listings consistent is the shared copy, not shared code.
-
-`screenshots/README.md` has the details, including the one that bites:
-**fonts are chosen per locale**. A font that sets an English headline draws a
-Devanagari one as *nothing at all* — a blank caption in a perfectly valid PNG.
-The compositor measures ink and fails rather than shipping that.
-{{/screenshots}}
+| **Screenshots (Android)** | `ubuntu-latest` | phone, 10" tablet |
 {{#ios}}
-
-### App Store screenshots — goldie
-
-The capture above is the path for Play. For the **App Store** listing,
-[goldie](https://github.com/kacperkapusciak/goldie) does more than capture: it
-replays flows on a simulator, frames them with a device bezel, background and
-headline, joins them into the preview video Apple asks for, and checks the
-result against Apple's upload rules.
-
-It needs **macOS with iOS simulators**, Node 20+ and ffmpeg, so it is a Mac-side
-tool. It is not part of this repo and must not be vendored into it — goldie
-ships its own agent skill, so install it once per machine and let it update
-itself:
-
-```sh
-npm i -g goldie
-```
-
-```
-/plugin marketplace add kacperkapusciak/goldie   # Claude Code
-/plugin install goldie@goldie
-```
-
-Then, from the repo root, ask for `create App Store screenshots using goldie`.
-
-Two things that will bite you: capture from a **release** build, because debug
-builds paint banners into the frames; and the recorded flows break whenever the
-UI changes, so expect to repair them rather than treating them as fixed.
-
-goldie is new (first published August 2026). Check the output against the
-listing rules yourself before uploading rather than trusting the verifier
-alone — the `store-readiness` skill covers what a submission must satisfy.
+| **Screenshots (iOS)** | `macos-latest` | iPhone 6.9", iPad 13" |
 {{/ios}}
+
+Each captures on an emulator or simulator matching the family, turns
+`headlines.json` into a job with `tool/screenshot_job.dart`, renders it with
+[moksha](https://github.com/lohanidamodar/moksha), and **opens a pull request**
+— the diff is the review, and no workflow needs write access to a protected
+branch.
+
+moksha validates every image against the store's upload rules and fails the
+job on a violation, so the three rejections that produce a perfectly valid PNG
+— an alpha channel, a Play aspect ratio over 2:1, a dimension Apple does not
+recognise — surface in CI rather than at upload. `screenshots/README.md` has
+the rest.
+{{/screenshots}}
 
 Release builds are run only when explicitly asked:
 

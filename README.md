@@ -53,13 +53,14 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 - **CI on day one** — `.github/workflows/ci.yml` runs `flutter analyze` and
   `flutter test` on every push and pull request, so the generated guards
   actually hold. Releasing stays separate and manual.
-- **Store screenshots as a workflow** — two manual workflows capture, frame and
-  commit the listing images: Ubuntu for Play, macOS with
-  [goldie](https://github.com/kacperkapusciak/goldie) for the App Store. The
-  headline copy is one committed file both read, so the listings cannot drift.
-  The Play compositor checks that the chosen font actually draws the script,
-  because a font with no Devanagari glyphs produces a blank caption in a valid
-  PNG and nothing else would notice.
+- **Store screenshots as a workflow** — manual workflows capture on a matching
+  emulator or simulator, render with
+  [moksha](https://github.com/lohanidamodar/moksha), and open a PR. One
+  renderer covers Play phone and tablet plus iPhone and iPad, from one
+  committed copy file, so the listings look like the same app. Every image is
+  checked against the store's upload rules first — an alpha channel, Play's
+  2:1 aspect limit and Apple's accepted dimensions each reject a perfectly
+  valid PNG, and all three now fail in CI instead of at upload.
 - **Agent tooling**: `.mcp.json` declaring the Dart MCP server (it ships inside
   the Dart SDK, so nothing to install) plus Appwrite's hosted server when that
   backend is on, and project-scoped skills under `.claude/skills/`. Turn it all

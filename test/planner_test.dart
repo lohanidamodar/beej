@@ -813,7 +813,7 @@ void main() {
     });
   });
   group('screenshot workflows', () {
-    test('both are manual only — they rewrite the repository', () async {
+    test('both are manual only — they rewrite listing images', () async {
       final plan = await planFor(
         const SpecInput(
           name: 'a1',
@@ -828,9 +828,31 @@ void main() {
         expect(workflow, contains('workflow_dispatch'));
         expect(workflow, isNot(contains('\n  push:')));
         expect(workflow, isNot(contains('\n  pull_request:')));
-        // Pushing the result back needs it; nothing else here does.
+      }
+    });
+
+    test('they open a PR rather than pushing to the branch', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      for (final path in [
+        '.github/workflows/screenshots-android.yml',
+        '.github/workflows/screenshots-ios.yml',
+      ]) {
+        final workflow = contentOf(plan, path);
+        expect(workflow, contains('open-screenshot-pr'));
+        // Opening a PR needs both; it also means neither workflow has to
+        // push to a protected branch.
+        expect(workflow, contains('pull-requests: write'));
         expect(workflow, contains('contents: write'));
       }
+      expect(
+        contentOf(plan, '.github/actions/open-screenshot-pr/action.yml'),
+        contains('gh pr create'),
+      );
     });
 
     test('only iOS gets a macOS runner', () async {
@@ -840,8 +862,8 @@ void main() {
           platforms: {TargetPlatform.android, TargetPlatform.ios},
         ),
       );
-      // Ubuntu with KVM is 2-3x faster and much cheaper than macOS. Only
-      // goldie genuinely needs a Mac, because it drives an iOS simulator.
+      // Ubuntu with KVM is 2-3x faster and much cheaper. Only the iOS
+      // simulator genuinely needs a Mac.
       expect(
         contentOf(plan, '.github/workflows/screenshots-android.yml'),
         contains('runs-on: ubuntu-latest'),
@@ -852,6 +874,28 @@ void main() {
       );
     });
 
+    test('every device family a store has a slot for is covered', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      final android = contentOf(
+        plan,
+        '.github/workflows/screenshots-android.yml',
+      );
+      expect(android, contains('android-phone-screenshot'));
+      expect(android, contains('android-tablet-screenshot'));
+
+      final ios = contentOf(plan, '.github/workflows/screenshots-ios.yml');
+      // The sizes App Store Connect requires for new submissions.
+      expect(ios, contains('iphone-screenshot'));
+      expect(ios, contains('ios-6.9'));
+      expect(ios, contains('ipad-screenshot'));
+      expect(ios, contains('ipad-13'));
+    });
+
     test('the iOS workflow is absent without an iOS target', () async {
       final plan = await planFor(
         const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
@@ -859,9 +903,6 @@ void main() {
       final paths = pathsOf(plan);
       expect(paths, contains('.github/workflows/screenshots-android.yml'));
       expect(paths, isNot(contains('.github/workflows/screenshots-ios.yml')));
-      // goldie is iOS-only by construction — its whole device layer is
-      // `xcrun simctl` — so an Android-only app has no use for its config.
-      expect(paths, isNot(contains('goldie.config.ts')));
     });
 
     test('GitHub expressions survive rendering', () async {
@@ -884,42 +925,36 @@ void main() {
         contentOf(plan, '.github/workflows/screenshots-android.yml'),
         contains('ne-NP'),
       );
-      // App Store Connect has no Nepali; offering it would capture into a
-      // directory deliver refuses.
+      // App Store Connect has no Nepali.
       expect(
         contentOf(plan, '.github/workflows/screenshots-ios.yml'),
         isNot(contains('ne-NP')),
       );
     });
 
-    test('one copy file feeds both stores', () async {
+    test('one copy file feeds every store and family', () async {
       final plan = await planFor(
         const SpecInput(
           name: 'a1',
-          platforms: {TargetPlatform.android, TargetPlatform.ios},
           tabs: [
             TabSpec(id: 'home', label: 'Home', icon: 'house'),
             TabSpec(id: 'notes', label: 'Notes', icon: 'note'),
           ],
         ),
       );
-
-      final headlines = contentOf(plan, 'screenshots/headlines.json');
-      final decoded = jsonDecode(headlines) as Map<String, dynamic>;
+      final decoded = jsonDecode(
+        contentOf(plan, 'screenshots/headlines.json'),
+      ) as Map<String, dynamic>;
       final ids = [
         for (final scene in decoded['scenes'] as List)
           (scene as Map)['id'] as String,
       ];
-      // Scene ids are what ties the capture filenames, the compositor and the
-      // argent flow names together.
+      // Scene ids tie the capture filenames to the copy.
       expect(ids, ['home', 'notes', 'settings']);
 
-      // goldie reads the same file rather than carrying its own copy, so the
-      // two listings cannot say different things.
-      expect(
-        contentOf(plan, 'goldie.config.ts'),
-        contains('screenshots/headlines.json'),
-      );
+      // Cycled across the set, so a listing is not a contact sheet.
+      expect(decoded['layouts'], isA<List>());
+      expect(decoded['layouts'], isNotEmpty);
     });
 
     test('a font is named per locale, not assumed', () async {
@@ -931,39 +966,30 @@ void main() {
       ) as Map<String, dynamic>;
       final fonts = decoded['fonts'] as Map<String, dynamic>;
 
-      // Font coverage is per script. A font that sets an English headline
-      // will draw a Devanagari one as nothing at all — a blank caption that
-      // still produces a valid file, so only an explicit choice catches it.
+      // Coverage is per script: a font that sets an English headline draws a
+      // Devanagari one as nothing at all, in a perfectly valid file.
       expect(fonts['default'], isNotNull);
       expect(fonts['ne-NP'], contains('Devanagari'));
     });
 
-    test('the Android action installs the fonts it names', () async {
-      final plan = await planFor(
-        const SpecInput(name: 'a1', locales: ['en', 'ne']),
-      );
+    test('rendering is pinned to a moksha ref', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
       final action = contentOf(
         plan,
-        '.github/actions/caption-screenshots/action.yml',
+        '.github/actions/moksha-render/action.yml',
       );
-      expect(action, contains('fonts-noto-core'));
-      expect(action, contains('fonts-dejavu-core'));
+      // A checkout, not a dependency — so a change in moksha cannot silently
+      // alter this app's listing.
+      expect(action, contains('moksha-ref'));
+      expect(action, contains('lohanidamodar/moksha'));
     });
 
-    test('the compositor ships for Android and not for iOS-only', () async {
-      final android = await planFor(
-        const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
-      );
-      expect(pathsOf(android), contains('tool/caption_screenshots.dart'));
-
-      // iOS framing is goldie's job; there is nothing for the compositor to do.
-      final ios = await planFor(
-        const SpecInput(name: 'a1', platforms: {TargetPlatform.ios}),
-      );
-      expect(
-        pathsOf(ios),
-        isNot(contains('.github/actions/caption-screenshots/action.yml')),
-      );
+    test('the job builder and the skill ship with the copy file', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      final paths = pathsOf(plan);
+      expect(paths, contains('screenshots/headlines.json'));
+      expect(paths, contains('tool/screenshot_job.dart'));
+      expect(paths, contains('.claude/skills/moksha/SKILL.md'));
     });
 
     test('the copy file ships even without CI', () async {

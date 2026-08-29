@@ -237,41 +237,35 @@ class ScreenshotsBrick extends Brick {
       'test_driver/integration_test.dart',
     ),
 
-    // The headline copy, in one file because both stores read it: the Android
-    // workflow composites from it and goldie.config.ts imports it. Committed,
-    // so listing copy is reviewed like code.
+    // Listing copy and styling, in one file because every store reads it.
+    // Committed, so how the listing looks is reviewed like code.
     const TemplateFile(
       'screenshots/headlines.json.tmpl',
       'screenshots/headlines.json',
     ),
     const TemplateFile('screenshots/README.md.tmpl', 'screenshots/README.md'),
-    // Android's compositor. Dart rather than shell in the workflow: it has
-    // real branching, and `--dry-run` makes it inspectable before CI runs it.
-    if (spec.hasAndroid)
-      const TemplateFile(
-        'screenshots/caption_screenshots.dart.tmpl',
-        'tool/caption_screenshots.dart',
-        // No mustache tags in it, and it is full of Dart string
-        // interpolation. Copied rather than rendered so the two can never
-        // collide.
-        raw: true,
-      ),
-    // goldie builds the App Store assets; it is iOS-only by construction, so
-    // there is nothing to generate for an Android-only app.
-    if (spec.hasIos)
-      const TemplateFile('goldie/goldie.config.ts.tmpl', 'goldie.config.ts'),
+    // Turns that copy into a moksha job. Dart, and separate from the
+    // workflow, so the mapping is readable and runnable by hand.
+    const TemplateFile(
+      'screenshots/screenshot_job.dart.tmpl',
+      'tool/screenshot_job.dart',
+      raw: true,
+    ),
 
     // The capture workflows. Manual only — they rewrite the repository.
     if (spec.tooling.githubWorkflow) ...[
-      // Android only: the App Store side is goldie, which does its own
-      // framing. What keeps the two listings consistent is the shared copy
-      // in screenshots/headlines.json, not shared code.
-      if (spec.hasAndroid)
-        const TemplateFile(
-          'github/caption-screenshots-action.yml.tmpl',
-          '.github/actions/caption-screenshots/action.yml',
-          raw: true,
-        ),
+      // Shared by both platforms: one renderer for every store and device
+      // family, so the listings look like the same app.
+      const TemplateFile(
+        'github/moksha-render-action.yml.tmpl',
+        '.github/actions/moksha-render/action.yml',
+        raw: true,
+      ),
+      const TemplateFile(
+        'github/open-screenshot-pr-action.yml.tmpl',
+        '.github/actions/open-screenshot-pr/action.yml',
+        raw: true,
+      ),
       if (spec.hasAndroid)
         const TemplateFile(
           'github/screenshots-android.yml.tmpl',

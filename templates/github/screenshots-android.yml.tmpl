@@ -1,16 +1,13 @@
-# Capture, frame and commit Play store screenshots.
+# Capture, frame and open a PR with the Play store screenshots.
 #
-# Manual only. It rewrites files in the repository, so it runs when you decide
-# the listing needs refreshing — not on every push.
+# Manual only: it rewrites listing images, so it runs when you decide the
+# listing needs refreshing.
 #
-# Ubuntu, not macOS: the emulator action's own guidance is that Ubuntu runners
-# with KVM are 2-3x faster than the macOS ones and a lot cheaper. Only iOS
-# genuinely needs a Mac.
+# Ubuntu, not macOS — the emulator action's own guidance is that Ubuntu runners
+# with KVM are 2-3x faster and much cheaper.
 #
-#   1. boots an emulator and runs integration_test/screenshot_test.dart
-#   2. composites the headline from screenshots/headlines.json over each
-#      capture — the same copy goldie uses for the App Store
-#   3. commits the framed images where `supply` uploads them from
+# One job per device family, because Play has a separate listing slot for each
+# and each needs capturing on a matching emulator.
 
 name: Screenshots (Android)
 
@@ -18,69 +15,95 @@ on:
   workflow_dispatch:
     inputs:
       locale:
-        description: "Play listing locale directory"
+        description: "Play listing locale"
         type: choice
         default: en-US
         options:
 <% #playLocales %>
           - <% code %>
 <% /playLocales %>
-      api_level:
-        description: "Android API level to emulate"
-        default: "34"
-      profile:
-        # Free choice now that nothing matches on exact resolution — the
-        # compositor scales to whatever the emulator produced. Play wants
-        # 320-3840px on the long edge.
-        description: "Emulator device profile"
-        default: "pixel_6"
-      commit:
-        description: "Commit the result back to the branch"
-        type: boolean
-        default: true
+      families:
+        description: "Which device families to regenerate"
+        type: choice
+        default: phone
+        options:
+          - phone
+          - phone+tablet
 
-# Needed to push the result. Pushes made with GITHUB_TOKEN do not retrigger
-# workflows, so this cannot loop.
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   screenshots:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      LOCALE: ${{ inputs.locale }}
+
+    strategy:
+      # Sequential: two emulators on one runner is a reliable way to run out
+      # of memory.
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        include:
+          - family: phone
+            profile: pixel_6
+            asset_type: android-phone-screenshot
+            size_id: android-phone
+            slot: phoneScreenshots
+          - family: tablet
+            profile: "10.1in WXGA (Tablet)"
+            asset_type: android-tablet-screenshot
+            size_id: android-10inch
+            slot: tenInchScreenshots
 
     steps:
       - uses: actions/checkout@v7
 
+      - name: Skip families that were not asked for
+        id: want
+        run: |
+          if [ "${{ matrix.family }}" = "tablet" ] && \
+             [ "${{ inputs.families }}" != "phone+tablet" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-java@v4
+        if: steps.want.outputs.run == 'true'
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: subosito/flutter-action@v2
+        if: steps.want.outputs.run == 'true'
         with:
           flutter-version: "<% flutterVersion %>"
           channel: stable
           cache: true
 
       - name: Install dependencies
+        if: steps.want.outputs.run == 'true'
         run: flutter pub get
 
       - name: Enable KVM
+        if: steps.want.outputs.run == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Capture on an emulator
+      - name: Capture
+        if: steps.want.outputs.run == 'true'
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          LOCALE: ${{ inputs.locale }}
         with:
-          api-level: ${{ inputs.api_level }}
+          api-level: 34
           arch: x86_64
-          profile: ${{ inputs.profile }}
+          profile: ${{ matrix.profile }}
           disable-animations: true
           script: |
             # en-US -> en. The app's locale codes are the ARB ones, not the
@@ -91,28 +114,33 @@ jobs:
               --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
               -d emulator-5554
 
-      - name: Caption them
-        uses: ./.github/actions/caption-screenshots
-        with:
-          locale: ${{ inputs.locale }}
-          destination: android/fastlane/metadata/android/${{ inputs.locale }}/images/phoneScreenshots
-
-      - name: Commit
-        if: ${{ inputs.commit }}
+      - name: Build the moksha job
+        if: steps.want.outputs.run == 'true'
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android/fastlane/metadata
-          if git diff --staged --quiet; then
-            echo "screenshots unchanged; nothing to commit"
-            exit 0
-          fi
-          git commit -m "chore: refresh Play screenshots (${LOCALE})"
-          git push
+          dart run tool/screenshot_job.dart \
+            --asset-type ${{ matrix.asset_type }} \
+            --size-id ${{ matrix.size_id }} \
+            --locale ${{ inputs.locale }} \
+            --out "$RUNNER_TEMP/job.json"
+
+      - name: Render
+        if: steps.want.outputs.run == 'true'
+        uses: ./.github/actions/moksha-render
+        with:
+          job: ${{ runner.temp }}/job.json
+          destination: android/fastlane/metadata/android/${{ inputs.locale }}/images/${{ matrix.slot }}
+
+      - name: Open a PR
+        if: steps.want.outputs.run == 'true'
+        uses: ./.github/actions/open-screenshot-pr
+        with:
+          paths: android/fastlane/metadata
+          title: "chore: refresh Play ${{ matrix.family }} screenshots (${{ inputs.locale }})"
+          branch: screenshots/play-${{ matrix.family }}-${{ inputs.locale }}
 
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.want.outputs.run == 'true'
         with:
-          name: screenshots-android-${{ inputs.locale }}
-          path: fastlane/screenshots/${{ inputs.locale }}/
+          name: play-${{ matrix.family }}-${{ inputs.locale }}
+          path: android/fastlane/metadata/android/${{ inputs.locale }}/images/
           if-no-files-found: warn

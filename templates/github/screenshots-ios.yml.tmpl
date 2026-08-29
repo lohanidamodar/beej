@@ -1,19 +1,12 @@
-# Capture, frame and commit App Store screenshots with goldie.
+# Capture, frame and open a PR with the App Store screenshots.
 #
-# Manual only, and macOS — goldie drives an iOS simulator through `xcrun
-# simctl`, which has no Linux equivalent. macOS minutes bill at 10x on a
-# private repo, which is another reason this is not automatic.
+# macOS, because the iOS simulator has no Linux equivalent — this is the only
+# workflow here that genuinely needs a Mac runner, and macOS minutes bill at
+# 10x on a private repo.
 #
-#   1. builds a release simulator app
-#   2. `goldie all` replays the argent flows, frames each capture with a
-#      device bezel and headline, and checks the result against Apple's rules
-#   3. commits the images where `deliver` uploads them from
-#
-# PREREQUISITE: argent flows. goldie replays flows from `.argent/flows`, named
-# `store-<scene>` for each scene in screenshots/headlines.json. They do not
-# exist until someone records them, which is a Mac-side job — see
-# screenshots/README.md. Until then this workflow fails at the capture step,
-# on purpose and with a clear message rather than a green run and no images.
+# One job per device family: Apple requires a 6.9" iPhone set, and a 13" iPad
+# set as well if the app runs on iPad. Each is captured on a matching
+# simulator and framed by moksha at the exact size App Store Connect accepts.
 
 name: Screenshots (iOS)
 
@@ -22,102 +15,123 @@ on:
     inputs:
       locale:
         # App Store languages, which are not the Play ones — Apple accepts a
-        # fixed list with no Nepali, and a directory it does not recognise is
-        # rejected on upload.
-        description: "App Store locale directory"
+        # fixed list with no Nepali.
+        description: "App Store locale"
         type: choice
         default: en-US
         options:
 <% #appStoreLocales %>
           - <% code %>
 <% /appStoreLocales %>
-      commit:
-        description: "Commit the result back to the branch"
-        type: boolean
-        default: true
+      families:
+        description: "Which device families to regenerate"
+        type: choice
+        default: iphone
+        options:
+          - iphone
+          - iphone+ipad
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   screenshots:
     runs-on: macos-latest
     timeout-minutes: 90
-    env:
-      LOCALE: ${{ inputs.locale }}
+
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        include:
+          - family: iphone
+            simulator: "iPhone 17 Pro Max"
+            asset_type: iphone-screenshot
+            size_id: "ios-6.9"
+          - family: ipad
+            simulator: "iPad Pro 13-inch (M4)"
+            asset_type: ipad-screenshot
+            size_id: "ipad-13"
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check the flows exist
+      - name: Skip families that were not asked for
+        id: want
         run: |
-          if [ ! -d .argent/flows ] || [ -z "$(ls -A .argent/flows 2>/dev/null)" ]; then
-            echo "::error::no argent flows in .argent/flows — goldie has nothing to replay."
-            echo "Record them on a Mac first; see screenshots/README.md."
-            exit 1
+          if [ "${{ matrix.family }}" = "ipad" ] && \
+             [ "${{ inputs.families }}" != "iphone+ipad" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
           fi
-          ls -la .argent/flows
 
       - uses: subosito/flutter-action@v2
+        if: steps.want.outputs.run == 'true'
         with:
           flutter-version: "<% flutterVersion %>"
           channel: stable
           cache: true
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+      - name: Install dependencies
+        if: steps.want.outputs.run == 'true'
+        run: flutter pub get
 
-      - name: Install goldie and its tools
-        run: |
-          brew install ffmpeg
-          npm i -g goldie @swmansion/argent
-
-      - name: Build the simulator app
-        # Release, because a debug build paints banners into the captures.
-        run: |
-          flutter pub get
-          flutter build ios --simulator --release
-
-      - name: Check the toolchain
-        run: goldie doctor
-
-      - name: Capture, frame and verify
-        run: goldie all
-
-      - name: Place the images
-        env:
-          DESTINATION: ios/fastlane/screenshots/${{ inputs.locale }}
+      - name: Boot the simulator
+        if: steps.want.outputs.run == 'true'
+        id: sim
         run: |
           set -euo pipefail
-          src="out/$LOCALE"
-          if [ ! -d "$src" ] || [ -z "$(ls -A "$src" 2>/dev/null)" ]; then
-            echo "::error::goldie produced nothing in $src"
-            exit 1
-          fi
-          # Replaced wholesale: a scene removed from headlines.json should
-          # disappear from the listing too.
-          rm -rf "$DESTINATION"
-          mkdir -p "$DESTINATION"
-          find "$src" -name '*.png' -exec cp {} "$DESTINATION/" \;
-          ls -la "$DESTINATION"
+          # What the runner's Xcode actually has, in case the name has moved on.
+          xcrun simctl list devicetypes | grep -i -E 'iphone|ipad' || true
+          udid=$(xcrun simctl create shots "${{ matrix.simulator }}")
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
 
-      - name: Commit
-        if: ${{ inputs.commit }}
+      - name: Capture
+        if: steps.want.outputs.run == 'true'
+        env:
+          LOCALE: ${{ inputs.locale }}
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ios/fastlane/screenshots
-          if git diff --staged --quiet; then
-            echo "screenshots unchanged; nothing to commit"
-            exit 0
-          fi
-          git commit -m "chore: refresh App Store screenshots (${LOCALE})"
-          git push
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshot_test.dart \
+            --dart-define=SCREENSHOT_LOCALE="${LOCALE%%-*}" \
+            -d ${{ steps.sim.outputs.udid }}
+
+      - name: Build the moksha job
+        if: steps.want.outputs.run == 'true'
+        run: |
+          dart run tool/screenshot_job.dart \
+            --asset-type ${{ matrix.asset_type }} \
+            --size-id ${{ matrix.size_id }} \
+            --locale ${{ inputs.locale }} \
+            --out "$RUNNER_TEMP/job.json"
+
+      - name: Render
+        if: steps.want.outputs.run == 'true'
+        uses: ./.github/actions/moksha-render
+        with:
+          job: ${{ runner.temp }}/job.json
+          destination: ios/fastlane/screenshots/${{ inputs.locale }}/${{ matrix.family }}
+
+      - name: Open a PR
+        if: steps.want.outputs.run == 'true'
+        uses: ./.github/actions/open-screenshot-pr
+        with:
+          paths: ios/fastlane/screenshots
+          title: "chore: refresh App Store ${{ matrix.family }} screenshots (${{ inputs.locale }})"
+          branch: screenshots/appstore-${{ matrix.family }}-${{ inputs.locale }}
+
+      - name: Shut the simulator down
+        if: always() && steps.want.outputs.run == 'true'
+        run: xcrun simctl delete ${{ steps.sim.outputs.udid }} || true
 
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.want.outputs.run == 'true'
         with:
-          name: screenshots-ios-${{ inputs.locale }}
-          path: out/
+          name: appstore-${{ matrix.family }}-${{ inputs.locale }}
+          path: ios/fastlane/screenshots/${{ inputs.locale }}/
           if-no-files-found: warn

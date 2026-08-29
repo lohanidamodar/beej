@@ -87,7 +87,11 @@ enum SkillKind {
 
   /// Making a listing found and installed — the counterpart to
   /// [storeReadiness], which only asks whether it will be accepted.
-  appStoreOptimization('app-store-optimization');
+  appStoreOptimization('app-store-optimization'),
+
+  /// Rendering the listing images themselves — device frames, headlines, and
+  /// the store rules that reject a perfectly valid PNG.
+  moksha('moksha');
 
   const SkillKind(this.wire);
 

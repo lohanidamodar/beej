@@ -1,25 +1,35 @@
 # Store screenshots
 
-Both store listings are built by GitHub workflows and committed back to this
-repo. The copy lives in `headlines.json`, in one file, because two different
-tools read it — so the listings cannot end up saying different things.
+Every store listing image is built by a GitHub workflow and arrives as a pull
+request. The copy and styling live in `headlines.json`, in one file, because
+every store and every device family reads the same one.
 
-## The two pipelines
+## How it works
 
-They are deliberately not the same tool, because no tool does both.
+| Step | What runs |
+|---|---|
+| Capture | `integration_test/screenshot_test.dart`, on an emulator or simulator matching the device family |
+| Job | `tool/screenshot_job.dart` turns `headlines.json` into a moksha job |
+| Render | [moksha](https://github.com/lohanidamodar/moksha) — device frame, background, headline, at the exact store size |
+| Review | the workflow opens a PR; the diff is the review |
 
-| | Play | App Store |
+One renderer for every store, so the listings look like the same app.
+
+## The workflows
+
+**Screenshots (Android)** on Ubuntu, **Screenshots (iOS)** on macOS. Each takes
+a locale and which device families to regenerate:
+
+| Family | Captured on | Output |
 |---|---|---|
-| Workflow | **Screenshots (Android)** | **Screenshots (iOS)** |
-| Runner | `ubuntu-latest` | `macos-latest` |
-| Capture | `integration_test` on an emulator | goldie, replaying argent flows |
-| Framing | headline composited over the raw capture | device bezel, background, headline |
-| Copy from | `headlines.json` | `headlines.json`, via `goldie.config.ts` |
+| Android phone | `pixel_6` emulator | 1080x1920 |
+| Android 10" tablet | tablet AVD | 1600x2560 |
+{{#ios}}
+| iPhone 6.9" | iPhone 17 Pro Max simulator | 1320x2868 |
+| iPad 13" | iPad Pro 13" simulator | 2064x2752 |
+{{/ios}}
 
-[goldie](https://github.com/kacperkapusciak/goldie) is iOS-only by
-construction — its whole device layer is `xcrun simctl` and its device list is
-one entry, iPhone 17 Pro Max. It cannot produce Play assets, which is why
-Android composites its own.
+Neither runs on push — they rewrite listing images, so they are manual.
 
 ## Changing the copy
 
@@ -29,60 +39,51 @@ Edit `headlines.json`. One entry per scene:
 { "id": "home", "headline": { "en-US": "Everything in one place" } }
 ```
 
-Scene ids match the capture names the integration test writes **and** the
-argent flow names goldie replays. Add a screen and all three move together.
+Scene ids match the capture names the integration test writes. Add a screen
+there and add it here, or the capture is skipped with a warning.
 
-These are store copy, not UI strings: write the benefit, not the feature name.
-The `app-store-optimization` skill covers what belongs here — and note that
-most people never scroll past the first two.
-{{#ios}}
-
-## Before the iOS workflow can run
-
-goldie replays **argent flows**, and they do not exist until someone records
-them. This is a Mac-side job, once:
+`background`, `layouts` and font names must be ones moksha knows:
 
 ```sh
-npm i -g goldie @swmansion/argent
+cd ../moksha && npm ci && npm run render -- --schema
 ```
 
-Record one flow per scene in `headlines.json`, named `store-<id>` — so
-`store-home`, `store-settings`, and so on. They land in `.argent/flows` and are
-committed. `goldie doctor` checks the toolchain and the flows before a real
-run.
+`layouts` is a list and is cycled across the screenshots, so a set has some
+rhythm instead of reading like a contact sheet.
 
-Until the flows are committed the iOS workflow fails at its first step, with a
-message saying so. That is deliberate: a green run that produced no images is
-the worse outcome.
+These are store copy, not UI strings: write the benefit, not the feature name.
+The `app-store-optimization` skill covers what belongs here — most people never
+scroll past the first two.
 
-Flows break when the UI changes. Re-record them, or ask an agent to repair
-them — goldie ships its own skill for that, installed per machine rather than
-vendored here:
+## Three rules that reject a perfectly good image
 
-```
-/plugin marketplace add kacperkapusciak/goldie
-/plugin install goldie@goldie
-```
+moksha checks all of these after rendering and fails the job, so a violation
+lands in CI rather than at upload:
 
-**No preview video yet.** Apple takes a 15-30 second recording, which needs its
-own flows; `goldie.config.ts` has no `preview` scene until you add them.
-{{/ios}}
+- **No alpha channel.** Play wants 24-bit PNG; Apple rejects transparency.
+- **Play aspect ratio.** The long side may be at most twice the short side — a
+  phone capture at its own native 1080x2400 is 2.22:1 and is refused.
+- **Apple dimensions.** Must match a size App Store Connect accepts.
+{{#hasNepali}}
+
+## Fonts and scripts
+
+A font renders the scripts it has glyphs for and silently draws nothing for the
+rest — a blank caption in a valid file. `fonts` in `headlines.json` is keyed by
+locale for that reason, and `ne-NP` uses `Noto Sans Devanagari`.
+{{/hasNepali}}
 
 ## Where the output goes
 
-- Play — `android/fastlane/metadata/android/<locale>/images/phoneScreenshots/`
+- Play — `android/fastlane/metadata/android/<locale>/images/<slot>/`
 {{#ios}}
-- App Store — `ios/fastlane/screenshots/<locale>/`
+- App Store — `ios/fastlane/screenshots/<locale>/<family>/`
 {{/ios}}
 
 Both are the directories `supply`{{#ios}} and `deliver`{{/ios}} upload from, so
-a committed screenshot is already in the release path — there is no separate
-assembly step at release time.
+a merged PR is already in the release path.
 
-## Languages
+## Doing it by hand
 
-{{#hasNepali}}The Play listing is bilingual; the App Store one is English only.
-That is Apple's constraint, not an oversight — App Store Connect accepts a
-fixed list of languages that includes `hi`, `bn-BD` and `ur-PK` but **no
-Nepali**. {{/hasNepali}}`headlines.json` carries every locale either store can
-use; each pipeline takes the ones its store accepts.
+The `moksha` skill in `.claude/skills/` walks an agent through the same steps
+locally — capture, build a job, render, look at the result.
