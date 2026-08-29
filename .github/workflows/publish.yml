@@ -1,0 +1,26 @@
+# Publishes to pub.dev when a version tag is pushed.
+#
+# Uses pub.dev's official reusable workflow, which authenticates with OIDC —
+# there is no long-lived token in this repository's secrets. pub.dev verifies
+# the publish came from this repo and a matching tag.
+#
+# Before the first automated run:
+#   1. publish 0.1.0 by hand — pub.dev cannot create a new package from CI
+#   2. on the package's Admin tab, enable publishing from GitHub Actions,
+#      with repository lohanidamodar/beej and tag pattern v{{version}}
+#
+# Then release by tagging a commit whose pubspec version matches:
+#   git tag v0.1.1 && git push origin v0.1.1
+
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

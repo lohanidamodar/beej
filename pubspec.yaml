@@ -4,7 +4,6 @@ description: >-
   en/ne localization, theming, fastlane and the store-screenshot harness,
   with Appwrite, sqflite and the rest as explicit choices.
 version: 0.1.0
-publish_to: none
 repository: https://github.com/lohanidamodar/beej
 
 environment:
