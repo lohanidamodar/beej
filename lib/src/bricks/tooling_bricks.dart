@@ -1,5 +1,6 @@
 import '../render/pub_dep.dart';
 import '../spec/app_spec.dart';
+import '../spec/store_locales.dart';
 import 'brick.dart';
 import 'versions.dart';
 
@@ -94,6 +95,59 @@ class FastlaneBrick extends Brick {
       ],
     ],
     if (spec.hasIos) ...[
+      // App Store listing copy, in the repo for the same reason the Play copy
+      // is: so it is reviewed rather than pasted into a web form.
+      //
+      // One directory per App Store language, which is not the same set as
+      // Play's — see `appStoreLanguage`. An app that ships Nepali still has an
+      // English-only App Store listing, because Apple has no Nepali.
+      for (final language in _appStoreLocales(spec)) ...[
+        TemplateFile(
+          'fastlane/ios/metadata/name.txt.tmpl',
+          'ios/fastlane/metadata/$language/name.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/subtitle.txt.tmpl',
+          'ios/fastlane/metadata/$language/subtitle.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/description.txt.tmpl',
+          'ios/fastlane/metadata/$language/description.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/keywords.txt.tmpl',
+          'ios/fastlane/metadata/$language/keywords.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/promotional_text.txt.tmpl',
+          'ios/fastlane/metadata/$language/promotional_text.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/release_notes.txt.tmpl',
+          'ios/fastlane/metadata/$language/release_notes.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/support_url.txt.tmpl',
+          'ios/fastlane/metadata/$language/support_url.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/marketing_url.txt.tmpl',
+          'ios/fastlane/metadata/$language/marketing_url.txt',
+        ),
+        TemplateFile(
+          'fastlane/ios/metadata/privacy_url.txt.tmpl',
+          'ios/fastlane/metadata/$language/privacy_url.txt',
+        ),
+      ],
+      // Not localised: one copyright line for the whole app.
+      const TemplateFile(
+        'fastlane/ios/metadata/copyright.txt.tmpl',
+        'ios/fastlane/metadata/copyright.txt',
+      ),
+      const TemplateFile(
+        'fastlane/ios/metadata/README.md.tmpl',
+        'ios/fastlane/metadata/README.md',
+      ),
       const TemplateFile('fastlane/ios/Fastfile.tmpl', 'ios/fastlane/Fastfile'),
       const TemplateFile('fastlane/ios/Appfile.tmpl', 'ios/fastlane/Appfile'),
       const TemplateFile(
@@ -108,6 +162,14 @@ class FastlaneBrick extends Brick {
   static List<String> _playLocales(AppSpec spec) => [
     'en-US',
     if (spec.locales.contains('ne')) 'ne-NP',
+  ];
+
+  /// App Store listing languages. Not the same set as [_playLocales]: Apple
+  /// accepts a fixed list that has no Nepali, and a directory it does not
+  /// recognise is rejected by `deliver`.
+  static List<String> _appStoreLocales(AppSpec spec) => [
+    for (final locale in spec.locales)
+      if (appStoreLanguage(locale) != null) appStoreLanguage(locale)!,
   ];
 }
 

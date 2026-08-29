@@ -19,13 +19,16 @@ on:
   workflow_dispatch:
     inputs:
       locale:
+        # App Store languages, which are not the Play ones — Apple accepts a
+        # fixed list with no Nepali, and a directory it does not recognise is
+        # rejected on upload.
         description: "App Store locale directory"
         type: choice
         default: en-US
         options:
-<% #playLocales %>
+<% #appStoreLocales %>
           - <% code %>
-<% /playLocales %>
+<% /appStoreLocales %>
       simulator:
         description: "Simulator device name"
         default: "iPhone 16 Pro Max"
@@ -45,7 +48,7 @@ jobs:
       LOCALE: ${{ inputs.locale }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:

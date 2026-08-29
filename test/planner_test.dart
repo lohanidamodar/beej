@@ -964,6 +964,126 @@ void main() {
       );
     });
   });
+  group('App Store metadata', () {
+    test('the listing lives in the repo, like the Play one', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      final paths = pathsOf(plan);
+      expect(
+        paths,
+        containsAll([
+          'ios/fastlane/metadata/en-US/name.txt',
+          'ios/fastlane/metadata/en-US/description.txt',
+          'ios/fastlane/metadata/en-US/keywords.txt',
+          'ios/fastlane/metadata/en-US/release_notes.txt',
+          // Not localised: one line for the whole app.
+          'ios/fastlane/metadata/copyright.txt',
+        ]),
+      );
+    });
+
+    test('none of it appears without an iOS target', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.android}),
+      );
+      expect(
+        pathsOf(plan).where((p) => p.startsWith('ios/fastlane/metadata')),
+        isEmpty,
+      );
+    });
+
+    test(
+      'Apple gets no Nepali listing even when the app ships Nepali',
+      () async {
+        final plan = await planFor(
+          const SpecInput(
+            name: 'a1',
+            platforms: {TargetPlatform.android, TargetPlatform.ios},
+            locales: ['en', 'ne'],
+          ),
+        );
+        final paths = pathsOf(plan);
+
+        // Play is the permissive one and does get a Nepali listing.
+        expect(
+          paths,
+          contains('android/fastlane/metadata/android/ne-NP/title.txt'),
+        );
+        // App Store Connect has no Nepali — fastlane's ALL_LANGUAGES, generated
+        // from Apple's own list, carries hi, bn-BD and ur-PK but not ne. A
+        // directory Apple does not recognise is rejected on upload.
+        expect(paths, contains('ios/fastlane/metadata/en-US/name.txt'));
+        expect(
+          paths.where((p) => p.startsWith('ios/fastlane/metadata/ne')),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'the iOS screenshot workflow offers only App Store languages',
+      () async {
+        final plan = await planFor(
+          const SpecInput(
+            name: 'a1',
+            platforms: {TargetPlatform.android, TargetPlatform.ios},
+            locales: ['en', 'ne'],
+          ),
+        );
+        final ios = contentOf(plan, '.github/workflows/screenshots-ios.yml');
+        final android = contentOf(
+          plan,
+          '.github/workflows/screenshots-android.yml',
+        );
+
+        // The two stores take different locale sets; offering ne-NP for iOS
+        // would capture into a directory deliver refuses.
+        expect(android, contains('ne-NP'));
+        expect(ios, isNot(contains('ne-NP')));
+        expect(ios, contains('en-US'));
+      },
+    );
+
+    test('the subtitle ships empty, because it is uploaded verbatim', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', platforms: {TargetPlatform.ios}),
+      );
+      // 30 characters, no room for a placeholder, and an over-length one is a
+      // hard rejection. Empty reads as "not set"; a plausible default uploads.
+      expect(
+        contentOf(plan, 'ios/fastlane/metadata/en-US/subtitle.txt').trim(),
+        isEmpty,
+      );
+    });
+  });
+
+  group('workflow hygiene', () {
+    test('every workflow checks out with a supported action version', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          platforms: {TargetPlatform.android, TargetPlatform.ios},
+        ),
+      );
+      final workflows = plan.files.where(
+        (f) => f.path.startsWith('.github/workflows/'),
+      );
+      expect(workflows, isNotEmpty);
+      for (final workflow in workflows) {
+        // v4 runs on Node 20, which GitHub has deprecated.
+        expect(
+          workflow.content,
+          isNot(contains('actions/checkout@v4')),
+          reason: '${workflow.path} still pins the Node 20 checkout',
+        );
+        expect(workflow.content, contains('actions/checkout@v7'));
+      }
+    });
+  });
 
   group('brick hygiene', () {
     test('the covering specs really do reach every brick', () {

@@ -386,6 +386,27 @@ Release notes come from `android/fastlane/metadata/android/<locale>/changelogs/`
 back to `default.txt`, so an unedited `default.txt` becomes your public "What's
 new". Write the real notes before you ship.
 
+{{#ios}}
+For iOS:
+
+```sh
+cd ios
+bundle install
+bundle exec fastlane beta         # TestFlight, or `release` for the App Store
+```
+
+The App Store listing is in the repo too, under `ios/fastlane/metadata/`, and
+`deliver` uploads every `.txt` there **verbatim** — there is nowhere to leave a
+note inside one. Read `ios/fastlane/metadata/README.md` before editing: the
+character limits are hard rejections, and `support_url.txt` ships empty because
+Apple requires an `https://` URL and rejects a `mailto:`.
+
+The two stores do not take the same languages. Play accepts Nepali; App Store
+Connect does not — its fixed list has `hi`, `bn-BD` and `ur-PK` but no `ne`. So
+the Play listing is localised and the App Store one is English only, and that
+asymmetry is deliberate rather than an omission.
+{{/ios}}
+
 CI does the same thing from `.github/workflows/android-release.yml`, which is
 manual-dispatch only. That workflow is **self-contained** — it does not call a
 reusable workflow elsewhere, so it runs for anyone who can read this repo, and

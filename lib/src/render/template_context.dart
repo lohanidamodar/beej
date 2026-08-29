@@ -3,6 +3,7 @@ import '../spec/app_spec.dart';
 import '../spec/enums.dart';
 import '../spec/icon_defaults.dart';
 import '../spec/nepali_labels.dart';
+import '../spec/store_locales.dart';
 
 /// Build the mustache context for a spec.
 ///
@@ -82,6 +83,16 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'playLocales': [
       const {'code': 'en-US'},
       if (spec.locales.contains('ne')) const {'code': 'ne-NP'},
+    ],
+    // App Store Connect accepts a fixed list of languages, and Nepali is not
+    // on it — fastlane's ALL_LANGUAGES, generated from Apple's own list, has
+    // bn-BD, hi and nine Indian languages but no `ne`. A listing directory
+    // Apple does not know is rejected by `deliver`, so the App Store side has
+    // to be filtered rather than mirroring the Play locales.
+    'appStoreLocales': [
+      for (final locale in spec.locales)
+        if (appStoreLanguage(locale) != null)
+          {'code': appStoreLanguage(locale)!},
     ],
     // Settings is captured last, after every tab.
     'screenshotSettingsKey':
