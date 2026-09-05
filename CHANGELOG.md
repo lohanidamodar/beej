@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0
+
+### Appwrite 26.1.0
+
+Generated projects were pinned to `^25.4.0`, which cannot resolve into 26.x.
+The only breaking change in 26.0.0 is `Execution.functionId` splitting into
+`resourceId`/`resourceType` — the Functions API, which these templates do not
+touch. TablesDB, Account and Client are unchanged.
+
+### Two dependency overrides removed
+
+Appwrite 25 capped `package_info_plus` below 10 and `device_info_plus` below
+13, which dragged in the win32 ^5 cluster and collided with `share_plus` 13's
+win32 ^6. Two `dependency_overrides` were the way out. 26.x widened both caps,
+so the cause is gone and the overrides go with it — a generated Appwrite app
+now resolves to the same versions on its own.
+
+Generated projects still start at `version: 1.0.0+1`; that is independent of
+beej's own version.
+
 ## 1.0.0
 
 Published from CI, and the first release the automated workflow produced.

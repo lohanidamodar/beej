@@ -3,7 +3,7 @@ description: >-
   Plants a new Flutter app — material_ui, Riverpod, go_router,
   en/ne localization, theming, fastlane and the store-screenshot harness,
   with Appwrite, sqflite and the rest as explicit choices.
-version: 1.0.0
+version: 1.1.0
 repository: https://github.com/lohanidamodar/beej
 
 environment:
