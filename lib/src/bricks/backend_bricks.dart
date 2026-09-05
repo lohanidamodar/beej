@@ -58,30 +58,11 @@ class AppwriteBrick extends Brick {
     ),
   ];
 
-  // Appwrite caps package_info_plus below 10, and that older line pins
-  // win32 ^5.5.3 — which collides with share_plus 13's win32 ^6. Something has
-  // to give, and forcing the win32-6 cluster is the safe direction: Appwrite
-  // touches only `PackageInfo.fromPlatform()` and `DeviceInfoPlugin()`, both
-  // unchanged across these majors. (win32 itself is Windows-desktop-only, so
-  // there is no Android or iOS runtime impact either way.)
-  @override
-  List<PubDep> dependencyOverrides(AppSpec spec) => [
-    PubDep.hosted(
-      'package_info_plus',
-      Versions.packageInfoPlus,
-      comment:
-          'Appwrite caps this below 10, which drags in the win32 ^5 cluster '
-          'and conflicts with share_plus 13. Appwrite only calls the stable '
-          'PackageInfo.fromPlatform(), so 10.x is safe.',
-    ),
-    PubDep.hosted(
-      'device_info_plus',
-      Versions.deviceInfoPlus,
-      comment:
-          'Same win32 cluster. Appwrite only constructs DeviceInfoPlugin(), '
-          'unchanged across these majors.',
-    ),
-  ];
+  // No dependency_overrides. Appwrite 25 capped package_info_plus below 10 and
+  // device_info_plus below 13, which dragged in the win32 ^5 cluster and
+  // collided with share_plus 13's win32 ^6; two overrides were the way out.
+  // 26.x widened both caps past what this template wants, so the workaround
+  // has no cause left and resolution is clean on its own.
 }
 
 /// sqflite with numbered SQL migrations.

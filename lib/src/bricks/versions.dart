@@ -26,8 +26,6 @@ abstract final class Versions {
   static const sharedPreferences = '^2.5.5';
   static const packageInfoPlus = '^10.2.1';
 
-  /// Only ever an override, forced by the Appwrite brick. See its comment.
-  static const deviceInfoPlus = '^13.2.0';
   static const sharePlus = '^13.3.0';
   static const urlLauncher = '^6.3.2';
   static const intl = '^0.20.3';
@@ -36,7 +34,7 @@ abstract final class Versions {
   // --- Choices ----------------------------------------------------------
 
   static const goRouter = '^17.5.0';
-  static const appwrite = '^25.4.0';
+  static const appwrite = '^26.1.0';
   static const sqflite = '^2.4.3';
   static const sqfliteCommonFfi = '^2.4.2+1';
   static const path = '^1.9.1';

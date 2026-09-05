@@ -185,21 +185,16 @@ void main() {
       );
     });
 
-    test('appwrite carries its win32 dependency overrides', () async {
-      final appwrite = await planFor(
+    test('no app needs a dependency override any more', () async {
+      // Appwrite 25 forced two, to escape a win32 collision its own caps
+      // caused. 26.x widened them, so an override here would now be a
+      // workaround outliving its cause — the thing they are worst at.
+      for (final input in [
+        const SpecInput(name: 'a1'),
         const SpecInput(name: 'a1', backend: Backend.appwrite),
-      );
-      final names = appwrite.dependencyOverrides.map((d) => d.name);
-      expect(names, containsAll(['package_info_plus', 'device_info_plus']));
-      // An override without a stated reason is the kind that outlives its cause.
-      for (final override in appwrite.dependencyOverrides) {
-        expect(override.comment, isNotNull);
+      ]) {
+        expect((await planFor(input)).dependencyOverrides, isEmpty);
       }
-    });
-
-    test('an offline app declares no overrides at all', () async {
-      final offline = await planFor(const SpecInput(name: 'a1'));
-      expect(offline.dependencyOverrides, isEmpty);
     });
 
     test('sqflite ships migrations and declares them as assets', () async {
