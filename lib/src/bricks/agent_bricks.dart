@@ -39,10 +39,15 @@ class AgentConfigBrick extends Brick {
     // Skills are copied verbatim: they are prose, and rendering them would
     // both risk mangling code samples and pointlessly bind a general-purpose
     // skill to one project's values.
+    // The source files carry `.tmpl` like every other template, and not only
+    // for consistency: the skills CLI crawls a git repo for any `SKILL.md`, so
+    // an unsuffixed one here would be offered to anyone installing beej's own
+    // skill — handing a plain Flutter project advice written for a generated
+    // one.
     for (final skill in spec.agents.skills)
       ...skillFiles(skill).map(
         (relative) => TemplateFile(
-          '${skill.templateDir}/$relative',
+          '${skill.templateDir}/$relative.tmpl',
           '.claude/skills/${skill.wire}/$relative',
           raw: true,
         ),

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1
+
+Fixes what 1.2.0 exposed. The skills CLI crawls a whole git repository for
+`SKILL.md` files, so installing beej's own skill offered four more that are
+templates for generated projects — including `material-ui`, which tells you
+never to import `package:flutter/material.dart`. In an ordinary Flutter repo
+that is not merely irrelevant, it is wrong.
+
+Template skill files now carry `.tmpl` like every other template, so only
+`beej-scaffolding` is discoverable. Generated projects are unchanged: they
+still receive `SKILL.md` and its references under `.claude/skills/`.
+
 ## 1.2.0
 
 ### Ships its own agent skill
