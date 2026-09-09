@@ -61,6 +61,13 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   checked against the store's upload rules first — an alpha channel, Play's
   2:1 aspect limit and Apple's accepted dimensions each reject a perfectly
   valid PNG, and all three now fail in CI instead of at upload.
+- **A skill for beej itself**, shipped the way Dart packages now distribute
+  them, so an agent in any repo can learn to scaffold with it:
+
+  ```sh
+  dart run skills@ add https://github.com/lohanidamodar/beej.git
+  ```
+
 - **Agent tooling**: `.mcp.json` declaring the Dart MCP server (it ships inside
   the Dart SDK, so nothing to install) plus Appwrite's hosted server when that
   backend is on, and project-scoped skills under `.claude/skills/`. Turn it all

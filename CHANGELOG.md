@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.2.0
+
+### Ships its own agent skill
+
+beej now carries `skills/beej-scaffolding/`, following the convention the
+`skills` CLI reads. An agent in any repo can install it:
+
+```sh
+dart run skills@ add https://github.com/lohanidamodar/beej.git
+```
+
+It covers the machine-readable entry points (`beej bricks`, `beej spec
+--schema`, `--dry-run`, `--yes`), and states up front that `material_ui` is a
+fixed assumption rather than a flag — the thing worth knowing before choosing
+beej at all.
+
+Generated projects keep their committed `.claude/skills/`. They do not depend
+on beej, so the CLI would never find those; and committed skills work offline
+and can be edited per project. The two coexist — the CLI tracks what it manages
+separately and leaves committed skills alone.
+
+`PROJECT.md` now also points at `dart run skills@ get`, for pulling skills from
+packages the app depends on as more of them ship skills.
+
 ## 1.1.0
 
 ### Appwrite 26.1.0

@@ -467,7 +467,21 @@ Add `--no-metrics` if you would rather it not report usage.
 ### Skills
 
 `.claude/skills/` holds skills scoped to this project; they load on demand when
-a task matches. See `docs/agent-tooling.md`.
+a task matches. See `docs/agent-tooling.md`. These are committed, so they work
+offline and can be edited per project.
+
+A dependency can also ship its own skills, teaching an agent that package's
+real APIs instead of guessed ones:
+
+```sh
+dart run skills@ get       # install skills from packages this app depends on
+dart run skills@ list      # what is installed
+```
+
+It installs into `.claude/skills/` alongside the committed ones and tracks what
+it manages separately, so it will not touch the skills above. Few packages ship
+skills yet, so expect "No skills found" for now — it is worth re-running as the
+ecosystem fills in.
 {{/mcp}}
 {{/hasTooling}}
 
