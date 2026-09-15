@@ -63,9 +63,10 @@ asking — that is a deliberate exclusion, not an oversight.
 ## After generating
 
 The project explains itself. **Read `PROJECT.md` first** — it is the single
-guide, and `CLAUDE.md` and `AGENTS.md` both point at it. It carries the scope
-rules, the conventions, the registries to extend, and the traps specific to
-this stack.
+guide. `AGENTS.md` carries the shared working rails and points at it, and
+`CLAUDE.md` is exactly `@AGENTS.md`, the import form Claude Code follows.
+`PROJECT.md` has the scope rules, the conventions, the registries to extend,
+and the traps specific to this stack.
 
 The project also ships its own skills under `.claude/skills/` covering
 `material-ui`, store readiness, app store optimization, mobile UI design and

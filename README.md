@@ -43,9 +43,13 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 - **Responsive helpers**, shared UI (`AsyncView`, `EmptyView`, `ErrorView`,
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.
-- **`PROJECT.md`** as the single guide, with `CLAUDE.md` and `AGENTS.md`
-  pointing at it — scope, workflow, conventions, the responsive contract, a
-  testing strategy and a done-checklist.
+- **`PROJECT.md`** as the single guide — scope, workflow, conventions, the
+  responsive contract, a testing strategy and a done-checklist. `AGENTS.md` is
+  canonical above it: it carries the shared working rails between
+  `<!-- popupbits:rails:begin -->` / `<!-- popupbits:rails:end -->` markers,
+  then points at `PROJECT.md`. `CLAUDE.md` is exactly `@AGENTS.md` — the import
+  form Claude Code follows, since it never reads `AGENTS.md` on its own and a
+  Markdown link is not an import.
 - **Agent skills** in `.claude/skills/`: `material-ui` (the frozen-vs-modern
   Material traps), `store-readiness` (will the submission be accepted),
   `app-store-optimization` (will the listing be found and installed), and
