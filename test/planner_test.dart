@@ -95,13 +95,19 @@ void main() {
       expect(pathsOf(bilingual), contains('lib/l10n/app_ne.arb'));
     });
 
-    test('points CLAUDE.md and AGENTS.md at one PROJECT.md', () {
+    test('chains CLAUDE.md to AGENTS.md to one PROJECT.md', () {
       expect(
         pathsOf(plan),
         containsAll(['CLAUDE.md', 'AGENTS.md', 'PROJECT.md']),
       );
-      expect(contentOf(plan, 'CLAUDE.md'), contains('PROJECT.md'));
-      expect(contentOf(plan, 'AGENTS.md'), contains('PROJECT.md'));
+      // Claude Code follows `@path` imports only; a Markdown link is never
+      // loaded, so CLAUDE.md must be exactly the import and nothing else.
+      expect(contentOf(plan, 'CLAUDE.md').trim(), '@AGENTS.md');
+
+      final agents = contentOf(plan, 'AGENTS.md');
+      expect(agents, contains('<!-- popupbits:rails:begin -->'));
+      expect(agents, contains('<!-- popupbits:rails:end -->'));
+      expect(agents, contains('PROJECT.md'));
     });
 
     test('removes the flutter create placeholder test', () {
