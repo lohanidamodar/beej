@@ -22,6 +22,11 @@ abstract final class Versions {
   static const materialUi = '^1.0.1';
   static const cupertinoIcons = '^1.0.9';
   static const flutterRiverpod = '^3.4.2';
+
+  /// Lets a coding agent drive the running app over the VM service. Only the
+  /// debug binding is installed, so a release build carries nothing of it.
+  static const marionetteFlutter = '^0.6.0';
+
   static const googleFonts = '^8.2.1';
   static const sharedPreferences = '^2.5.5';
   static const packageInfoPlus = '^10.2.1';

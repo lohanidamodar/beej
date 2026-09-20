@@ -40,6 +40,11 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   log and a Diagnostics screen the user can share. It stays on the device: a
   shipped app that cannot see its own runtime failures is guessing, and the
   worst `material_ui` failures never reach `flutter analyze`.
+- **[Marionette](https://marionette.leancode.co/)** — an agent can drive the
+  running app: read the widget tree, tap, type, scroll, screenshot, hot reload.
+  `MarionetteBinding` is installed under `kDebugMode` only, so a release build
+  carries none of it, and the MCP server is declared in `.mcp.json`. It needs
+  `dart pub global activate marionette_mcp` once per machine.
 - **Responsive helpers**, shared UI (`AsyncView`, `EmptyView`, `ErrorView`,
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.

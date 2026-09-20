@@ -504,7 +504,7 @@ void main() {
       final plan = await planFor(const SpecInput(name: 'a1'));
       final parsed =
           jsonDecode(contentOf(plan, '.mcp.json')) as Map<String, dynamic>;
-      expect((parsed['mcpServers'] as Map).keys, ['dart']);
+      expect((parsed['mcpServers'] as Map).keys, ['dart', 'marionette']);
     });
 
     test('.mcp.json is valid JSON with appwrite on', () async {
@@ -513,7 +513,11 @@ void main() {
       );
       final parsed =
           jsonDecode(contentOf(plan, '.mcp.json')) as Map<String, dynamic>;
-      expect((parsed['mcpServers'] as Map).keys, ['dart', 'appwrite']);
+      expect((parsed['mcpServers'] as Map).keys, [
+        'dart',
+        'marionette',
+        'appwrite',
+      ]);
       // Hosted + browser OAuth: no credential may be written into the repo.
       expect(contentOf(plan, '.mcp.json'), isNot(contains('key')));
     });

@@ -18,6 +18,36 @@ Worth knowing: two of the worst `material_ui` failure modes — losing route
 transitions, and a theme silently falling back — pass `flutter analyze` and
 fail only when the app runs. Being able to launch it and read its runtime
 errors is what catches those.
+
+## marionette
+
+[Marionette](https://marionette.leancode.co/) drives the app the way a person
+would: `get_interactive_elements` to read the widget tree, then `tap`,
+`enter_text`, `swipe`, `scroll_to`, `take_screenshots`, `get_logs`,
+`press_back_button`, `hot_reload`.
+
+Unlike the others it needs a one-time install per machine, because it is a pub
+package rather than part of the SDK:
+
+```bash
+dart pub global activate marionette_mcp
+```
+
+`.mcp.json` runs it as `dart pub global run marionette_mcp` rather than by bare
+name, so it works whether or not pub's `bin` directory is on `PATH`.
+
+The app side is already wired: `lib/main.dart` installs `MarionetteBinding`
+under `kDebugMode`, and `marionette_flutter` is a normal dependency because
+`main.dart` names it. A release build never constructs the binding.
+
+To use it: `flutter run`, copy the VM service URI the console prints
+(`ws://127.0.0.1:PORT/ws`), and give it to the agent to connect.
+
+One caveat for this project: Marionette recognises standard Material widgets
+out of the box, and this app is built on `material_ui` rather than the frozen
+Material library. If the agent reports a button or field it cannot tap, that
+is the reason — pass a `MarionetteConfiguration` to `ensureInitialized()`
+naming those widget types.
 {{#appwrite}}
 
 ## appwrite

@@ -203,6 +203,22 @@ class BaseBrick extends Brick {
     ),
     PubDep.hosted('flutter_riverpod', Versions.flutterRiverpod),
     PubDep.hosted(
+      'marionette_flutter',
+      Versions.marionetteFlutter,
+      comment:
+          'Lets a coding agent drive the running app over the VM service — '
+          'read the widget tree, tap, type, scroll, screenshot, hot reload. '
+          'lib/main.dart installs MarionetteBinding under kDebugMode only, so '
+          'a release build never constructs it.\n'
+          '\n'
+          'A normal dependency rather than a dev one because main.dart names '
+          'it, and main.dart is compiled into the release build whether or '
+          'not the debug branch can ever run.\n'
+          '\n'
+          'The matching MCP server is declared in .mcp.json; it needs '
+          '`dart pub global activate marionette_mcp` once per machine.',
+    ),
+    PubDep.hosted(
       'google_fonts',
       Versions.googleFonts,
       comment:
