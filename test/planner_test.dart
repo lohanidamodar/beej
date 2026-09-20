@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:beej/src/bricks/brick.dart';
 import 'package:beej/src/bricks/registry.dart';
+import 'package:beej/src/render/file_patch.dart';
 import 'package:beej/src/render/file_plan.dart';
 import 'package:beej/src/render/planner.dart';
 import 'package:beej/src/render/pub_dep.dart';
@@ -1127,6 +1128,139 @@ void main() {
           reason: '${workflow.path} still pins the Node 20 checkout',
         );
         expect(workflow.content, contains('actions/checkout@v7'));
+      }
+    });
+  });
+
+  group('platform identity', () {
+    test(
+      'the launcher label is the display name, not the package name',
+      () async {
+        final plan = await planFor(
+          const SpecInput(name: 'mero_nepali', displayName: 'Mero Nepali'),
+        );
+        final gradle = contentOf(plan, 'android/app/build.gradle.kts');
+
+        // What flutter create leaves behind is `android:label="mero_nepali"`.
+        expect(
+          gradle,
+          contains(r'manifestPlaceholders["appLabel"] = "Mero Nepali"'),
+        );
+        expect(
+          plan.patches.map((p) => p.patch.path),
+          contains('android/app/src/main/AndroidManifest.xml'),
+        );
+      },
+    );
+
+    test('debug and profile install under .dev, release does not', () async {
+      final plan = await planFor(const SpecInput(name: 'tipot'));
+      final gradle = contentOf(plan, 'android/app/build.gradle.kts');
+
+      expect(gradle, contains('debug {'));
+      expect(gradle, contains('getByName("profile") {'));
+      expect(
+        'applicationIdSuffix = ".dev"'.allMatches(gradle).length,
+        2,
+        reason: 'debug and profile, and nothing else',
+      );
+
+      // The release block is the one that gets uploaded.
+      final release = gradle.substring(gradle.indexOf('release {'));
+      expect(release, isNot(contains('applicationIdSuffix')));
+    });
+
+    test('the namespace and the store link keep the unsuffixed id', () async {
+      final plan = await planFor(const SpecInput(name: 'tipot'));
+
+      expect(
+        contentOf(plan, 'android/app/build.gradle.kts'),
+        contains('namespace = "com.example.tipot"'),
+        reason: 'namespace is the R class package, not the install id',
+      );
+      final config = contentOf(plan, 'lib/core/config/app_config.dart');
+      expect(config, contains("androidApplicationId = 'com.example.tipot'"));
+      expect(config, isNot(contains('.dev')));
+    });
+
+    test('turning it off leaves the label fix but no suffix', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'tipot', displayName: 'Tipot', devSuffix: false),
+      );
+      final gradle = contentOf(plan, 'android/app/build.gradle.kts');
+
+      expect(gradle, isNot(contains('applicationIdSuffix')));
+      expect(gradle, contains(r'manifestPlaceholders["appLabel"] = "Tipot"'));
+      expect(
+        plan.patches.map((p) => p.patch.path),
+        contains('android/app/src/main/AndroidManifest.xml'),
+        reason: 'the label is wrong with or without the dev suffix',
+      );
+    });
+
+    test(
+      'an iOS-only project still gets both plist and pbxproj edits',
+      () async {
+        final plan = await planFor(
+          const SpecInput(name: 'tipot', platforms: {TargetPlatform.ios}),
+        );
+        final paths = plan.patches.map((p) => p.patch.path).toList();
+
+        expect(paths, contains('ios/Runner/Info.plist'));
+        expect(paths, contains('ios/Runner.xcodeproj/project.pbxproj'));
+        expect(paths.where((p) => p.startsWith('android/')), isEmpty);
+      },
+    );
+
+    test('an underscored name uses the Apple id on the Apple side', () async {
+      // flutter create writes com.example.meroNepali into the pbxproj, so an
+      // edit anchored on com.example.mero_nepali finds nothing — and fastlane
+      // would address an app that does not exist.
+      final plan = await planFor(
+        const SpecInput(name: 'mero_nepali', platforms: {TargetPlatform.ios}),
+      );
+
+      expect(
+        contentOf(plan, 'ios/fastlane/Appfile'),
+        contains('com.example.meroNepali'),
+      );
+      expect(
+        contentOf(plan, 'ios/fastlane/Appfile'),
+        isNot(contains('mero_nepali')),
+      );
+
+      final pbxproj = plan.patches.firstWhere(
+        (p) => p.patch.path.endsWith('project.pbxproj'),
+      );
+      final edit = pbxproj.patch.edits.single as SetXcodeRunnerSettings;
+      expect(edit.bundleIdentifier, 'com.example.meroNepali');
+      expect(
+        edit.byConfiguration['Debug']!['PRODUCT_BUNDLE_IDENTIFIER'],
+        'com.example.meroNepali.dev',
+      );
+    });
+
+    test('a web-only project is patched not at all', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'tipot', platforms: {TargetPlatform.web}),
+      );
+
+      expect(plan.patches, isEmpty);
+    });
+
+    test('no brick patches a file another brick writes', () async {
+      for (final spec in coveringSpecs) {
+        final source = await TemplateSource.resolve();
+        final plan = Planner(source: source, bricks: allBricks).plan(spec);
+        final written = plan.files.map((f) => f.path).toSet();
+
+        for (final planned in plan.patches) {
+          expect(
+            written,
+            isNot(contains(planned.patch.path)),
+            reason: 'a file beej owns should carry the value, not be patched',
+          );
+        }
       }
     });
   });

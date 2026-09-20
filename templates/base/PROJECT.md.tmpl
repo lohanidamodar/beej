@@ -320,6 +320,49 @@ Release builds are run only when explicitly asked:
 flutter build apk --release
 flutter build appbundle --release
 ```
+{{#devSuffix}}
+
+### Debug builds install beside the store build
+
+Anything that is not a release build installs under **`{{applicationId}}{{devIdSuffix}}`**
+and shows on the launcher as **{{devAppLabel}}**. Both platforms decide "is
+this the same app" from that id, so `flutter run` puts a second icon on the
+device instead of replacing the copy installed from the store — you can test a
+change without losing the real app, its data or its signed-in session.
+
+| Build | Id | Label |
+|---|---|---|
+| `flutter run` (debug) | `{{applicationId}}{{devIdSuffix}}` | {{devAppLabel}} |
+| `flutter run --profile` | `{{applicationId}}{{devIdSuffix}}` | {{devAppLabel}} |
+| `flutter build --release` | `{{applicationId}}` | {{appName}} |
+
+Set by `applicationIdSuffix` per build type in `android/app/build.gradle.kts`,
+and by `PRODUCT_BUNDLE_IDENTIFIER` on the Debug and Profile configurations in
+`ios/Runner.xcodeproj/project.pbxproj`. It has to be the pbxproj on iOS rather
+than an xcconfig: `flutter create` points **both** Profile and Release at
+`Release.xcconfig`, so a suffix defined there would ship to the App Store.
+
+Deliberately **not** suffixed, so do not "fix" them:
+
+- `namespace` in `build.gradle.kts` — the R class package, not the install id.
+- `AppConfig.androidApplicationId` and `AppConfig.storeListingUrl` — the
+  `market://` rate link has to reach the published app.
+- fastlane's `APP_IDENTIFIER` — it uploads the release build.
+
+Two consequences worth knowing:
+
+- **Play in-app update{{^inAppUpdate}} (if you add it){{/inAppUpdate}} does nothing in a debug build**, because
+  `{{applicationId}}{{devIdSuffix}}` is not a package Play has ever heard of. That was already
+  true of debug builds; the suffix just makes the reason obvious.
+{{#appwrite}}
+- **Appwrite rejects the dev build until you register it.** Appwrite
+  authorizes a request by the package name or bundle id it came from, so
+  `{{applicationId}}{{devIdSuffix}}` needs its own platform entry on the project —
+  alongside `{{applicationId}}`, not instead of it. Without it every call from
+  a debug build fails on origin, which reads like a broken endpoint rather
+  than a missing registration. See §12.
+{{/appwrite}}
+{{/devSuffix}}
 
 ## 11. Common tasks
 
@@ -417,6 +460,14 @@ installed**. The Play listing itself is in the repo under
   SDK call in `runAppwrite`. UI surfaces failures as a snackbar with a retry.
 - Auth state is derived from `account.get()`; the SDK owns the session cookie,
   so nothing persists it by hand.
+{{#devSuffix}}
+- **Register both ids as platforms.** Appwrite authorizes a client request by
+  the package name or bundle id it came from, so the project needs
+  `{{applicationId}}` *and* `{{applicationId}}{{devIdSuffix}}` registered —
+  the second one is what every debug and profile build reports. Missing it
+  fails every call from a debug build on origin, which looks like a dead
+  endpoint rather than a missing registration. See §10.
+{{/devSuffix}}
 {{/appwrite}}
 {{#hasTooling}}
 

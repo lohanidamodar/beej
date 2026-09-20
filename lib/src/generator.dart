@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'bricks/registry.dart';
 import 'flutter/flutter_tool.dart';
 import 'flutter/keystore.dart';
+import 'render/file_patch.dart';
 import 'render/file_plan.dart';
 import 'render/planner.dart';
 import 'render/template_source.dart';
@@ -87,6 +88,7 @@ class Generator {
 
     await _flutterCreate(spec, target);
     _applyPlan(plan, target);
+    await _applyPatches(plan, target);
 
     final skipped = <String>[];
 
@@ -170,6 +172,48 @@ class Generator {
       }
     }
     _report('${plan.files.length} files written');
+  }
+
+  /// Apply the plan's edits to what `flutter create` wrote.
+  ///
+  /// A failure here aborts. These edits carry values a build is wrong without
+  /// — the bundle id a debug build installs under, the name on the launcher —
+  /// so a project that generated "successfully" while an edit silently missed
+  /// is worse than no project: the mistake only surfaces when a debug build
+  /// overwrites someone's store install. The likely cause is a Flutter
+  /// release changing a generated file, so the message names the version.
+  Future<void> _applyPatches(FilePlan plan, String target) async {
+    if (plan.patches.isEmpty) return;
+
+    for (final planned in plan.patches) {
+      final patch = planned.patch;
+      final file = File(p.join(target, patch.path));
+      if (!file.existsSync()) {
+        throw GenerationException(
+          'cannot patch "${patch.path}" — flutter create did not write it',
+          detail: await _patchHint(planned.brickId),
+        );
+      }
+      final before = file.readAsStringSync();
+      try {
+        final after = patch.applyTo(before);
+        if (after != before) file.writeAsStringSync(after);
+      } on PatchFailure catch (e) {
+        throw GenerationException(
+          'could not patch "${patch.path}": ${e.message}',
+          detail: await _patchHint(planned.brickId),
+        );
+      }
+    }
+    _report('${plan.patches.length} files patched');
+  }
+
+  Future<String> _patchHint(String brickId) async {
+    final version = await flutter.version();
+    return '  The "$brickId" brick edits files flutter create produces, and\n'
+        '  this one no longer looks the way beej expects'
+        '${version == null ? '' : ' on $version'}.\n'
+        '  beej needs its anchor updated for this Flutter release.';
   }
 
   Future<void> _pubGetAndL10n(String target, List<String> skipped) async {

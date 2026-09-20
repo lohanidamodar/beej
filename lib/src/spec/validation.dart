@@ -540,6 +540,25 @@ void _validateTooling(AppSpec spec, List<SpecIssue> issues) {
       ),
     );
   }
+  // Appwrite authorizes a client request by the package name or bundle id it
+  // came from, and rejects anything not registered as a platform on the
+  // project. A `.dev` build is a second identity, so it needs a second
+  // platform entry — without one every call from a debug build fails on
+  // origin, which reads like a broken endpoint rather than a missing
+  // registration. beej cannot add it: that needs console access it never has.
+  if (spec.features.devSuffix && spec.usesAppwrite) {
+    issues.add(
+      const SpecIssue(
+        IssueLevel.warning,
+        'features.devSuffix',
+        'debug and profile builds run as <applicationId>.dev, which Appwrite '
+            'will reject until it is registered',
+        hint:
+            'Add <applicationId>.dev as a second platform on the Appwrite '
+            'project, alongside the real one.',
+      ),
+    );
+  }
   if (spec.features.inAppUpdate && !spec.hasAndroid) {
     issues.add(
       const SpecIssue(

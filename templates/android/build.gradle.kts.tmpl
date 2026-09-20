@@ -39,6 +39,12 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // The launcher label. The manifest reads it as ${appLabel} rather
+        // than hard-coding a name, so a build type can override it below —
+        // and so the name on the launcher is the app's display name instead
+        // of the Dart package name flutter create writes there.
+        manifestPlaceholders["appLabel"] = "{{appName}}"
     }
 
     signingConfigs {
@@ -53,6 +59,34 @@ android {
     }
 
     buildTypes {
+{{#devSuffix}}
+        // Everything that is not the store build installs under its own
+        // applicationId, so it sits *beside* the copy installed from Play
+        // rather than replacing it. Testing a change no longer costs you the
+        // real app and its data.
+        //
+        // `namespace` above is deliberately not suffixed: that is the R class
+        // package, not the install id, and moving it would break resource
+        // references. AppConfig.androidApplicationId is not suffixed either —
+        // the market:// link has to reach the published app.
+        //
+        // profile has to be named explicitly. The Flutter Gradle Plugin
+        // creates it with initWith(debug) while the plugin is being applied,
+        // which is before this block runs, so it does not inherit what is set
+        // on debug here. getByName fails the build if a future Flutter stops
+        // creating it, which is the right outcome — silently dropping the
+        // suffix is how a debug build ends up overwriting a store install.
+        debug {
+            applicationIdSuffix = "{{devIdSuffix}}"
+            manifestPlaceholders["appLabel"] = "{{devAppLabel}}"
+        }
+
+        getByName("profile") {
+            applicationIdSuffix = "{{devIdSuffix}}"
+            manifestPlaceholders["appLabel"] = "{{devAppLabel}}"
+        }
+
+{{/devSuffix}}
         release {
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")

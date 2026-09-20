@@ -49,6 +49,7 @@ final matrix = <MatrixCase>[
       icons: IconSet.material,
       inAppUpdate: false,
       review: false,
+      devSuffix: false,
       fastlane: false,
       githubWorkflow: false,
       screenshots: false,

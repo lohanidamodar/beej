@@ -9,8 +9,11 @@
 abstract final class AppConfig {
   static const String appName = '{{appName}}';
 
-  /// Android applicationId / iOS bundle id. Must match the Gradle config —
-  /// the store deep link is built from it.
+  /// The Android applicationId of the **release** build — the store deep link
+  /// is built from it, so it must stay the published id.
+  ///
+  /// Not the id a debug build runs under, and not the iOS bundle id: Apple
+  /// bans underscores, so the two differ whenever the project name has one.
   static const String androidApplicationId = '{{applicationId}}';
 
   static const String storeListingUrl =

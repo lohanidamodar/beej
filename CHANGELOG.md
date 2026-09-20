@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased
+
+### Debug builds install beside the store build
+
+Debug and profile builds now carry `<applicationId>.dev` and a ` Dev` launcher
+label, so `flutter run` adds a second icon instead of replacing the copy
+installed from the store. Testing a change no longer costs you the real app,
+its data or its signed-in session. Release is untouched, and so is everything
+that names the store build: the Gradle `namespace`, the `market://` rate link
+and fastlane's `APP_IDENTIFIER`. Opt out with `--no-dev-suffix` or
+`features.devSuffix: false`.
+
+On iOS this had to go in `project.pbxproj` rather than an xcconfig, because
+`flutter create` points **both** Profile and Release at `Release.xcconfig` — a
+suffix defined there would have shipped to the App Store.
+
+With `backend: appwrite`, beej now warns that the `.dev` id needs registering
+as a second platform on the Appwrite project. Appwrite authorizes by bundle
+id, so without it every call from a debug build fails on origin.
+
+### The launcher label is the app's name
+
+`flutter create` writes the *package* name into `android:label` and a
+title-cased version of it into `CFBundleDisplayName`, and beej never corrected
+it — so an app called "Mero Nepali" shipped as `mero_nepali` on Android and
+`Mero_nepali` on iOS. Both now use `displayName`.
+
+### Fixed: the iOS bundle id was wrong for any name with an underscore
+
+Apple does not accept an underscore in a bundle identifier, so `flutter
+create` camel-cases the project name for it: `mero_nepali` is
+`com.example.mero_nepali` on Android but `com.example.meroNepali` on Apple.
+beej had only one notion of an app id and used it for both, which meant the
+generated `ios/fastlane/Appfile` and `Matchfile` addressed an app that does
+not exist. `AppSpec.appleBundleId` now mirrors flutter_tools'
+`createUTIIdentifier`, and everything on the Apple side uses it.
+
+### Bricks can patch the platform tree
+
+A brick can now declare anchored edits to files `flutter create` wrote, for
+the few values that cannot be owned as whole files — `project.pbxproj` carries
+generated UUIDs, and owning `AndroidManifest.xml` would mean re-shipping the
+activity config on every Flutter release. Every edit asserts its anchor: if a
+Flutter release changes one of those files, generation fails naming the file,
+the anchor and the Flutter version, rather than quietly skipping the edit.
+`--dry-run` lists patches alongside the files.
+
 ## 1.2.1
 
 Fixes what 1.2.0 exposed. The skills CLI crawls a whole git repository for

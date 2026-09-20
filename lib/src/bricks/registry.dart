@@ -4,6 +4,7 @@ import 'base_brick.dart';
 import 'brick.dart';
 import 'error_bricks.dart';
 import 'feature_bricks.dart';
+import 'platform_identity_brick.dart';
 import 'router_bricks.dart';
 import 'theme_bricks.dart';
 import 'tooling_bricks.dart';
@@ -28,6 +29,7 @@ const List<Brick> allBricks = <Brick>[
   NepaliDatesBrick(),
   NotificationsBrick(),
   AndroidBrick(),
+  PlatformIdentityBrick(),
   FastlaneBrick(),
   GithubWorkflowBrick(),
   ScreenshotsBrick(),

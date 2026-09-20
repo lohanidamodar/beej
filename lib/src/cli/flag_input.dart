@@ -96,6 +96,12 @@ void addCreateFlags(ArgParser parser) {
     ..addFlag('notifications', help: 'Local notifications and time zones.')
     ..addFlag('nepali-dates', help: 'Bikram Sambat dates.')
     ..addFlag('review', help: 'In-app review prompt.')
+    ..addFlag(
+      'dev-suffix',
+      help:
+          'Install debug and profile builds as <id>.dev, beside the store '
+          'build rather than over it.',
+    )
     // --- Tooling ---
     ..addFlag('fastlane', help: 'fastlane lanes for Play and the App Store.')
     ..addFlag('github-workflow', help: 'GitHub Actions release workflow.')
@@ -163,6 +169,7 @@ SpecInput readFlagInput(ArgResults results) {
     notifications: flag('notifications'),
     nepaliDates: flag('nepali-dates'),
     review: flag('review'),
+    devSuffix: flag('dev-suffix'),
     fastlane: flag('fastlane'),
     githubWorkflow: flag('github-workflow'),
     screenshots: flag('screenshots'),

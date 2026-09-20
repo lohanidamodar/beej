@@ -1,7 +1,15 @@
+import 'dart:math';
+
 import 'package:args/command_runner.dart';
 
 import '../bricks/registry.dart';
 import 'console.dart';
+
+/// Width of the brick-id column, from the longest id there actually is.
+///
+/// Derived rather than fixed so that adding a brick with a longer name than
+/// any before it cannot silently knock the two columns out of alignment.
+final int brickIdWidth = allBricks.map((b) => b.id.length).reduce(max) + 1;
 
 /// `beej bricks` — what beej can generate, and what turns each part on.
 class BricksCommand extends Command<int> {
@@ -20,8 +28,13 @@ class BricksCommand extends Command<int> {
     console.heading('bricks');
     for (final brick in allBricks) {
       console
-        ..line('    ${console.bold(brick.id.padRight(16))} ${brick.summary}')
-        ..line('    ${' ' * 16} ${console.dim(triggerFor(brick.id))}');
+        ..line(
+          '    ${console.bold(brick.id.padRight(brickIdWidth))} '
+          '${brick.summary}',
+        )
+        ..line(
+          '    ${' ' * brickIdWidth} ${console.dim(triggerFor(brick.id))}',
+        );
     }
     console.line();
     return 0;
@@ -47,6 +60,7 @@ String triggerFor(String id) => switch (id) {
   'github_workflow' => 'tooling.githubWorkflow: true',
   'screenshots' => 'tooling.screenshots: true',
   'android' => 'android is a target platform',
+  'platform_identity' => 'android or ios is a target platform',
   'agent_config' => 'agents.mcp or agents.skills (on by default)',
   'signing' => 'a signing block is present',
   _ => '',

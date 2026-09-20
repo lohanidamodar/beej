@@ -133,6 +133,7 @@ String specJsonSchema() {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "devSuffix": { "type": "boolean", "default": true, "description": "Install debug and profile builds as <applicationId>.dev, beside the store build rather than over it. Release is unchanged." },
         "inAppUpdate": { "type": "boolean", "default": true, "description": "Play flexible in-app update. Android-only; no-ops elsewhere." },
         "notifications": { "type": "boolean", "default": false },
         "nepaliDates": { "type": "boolean", "default": false },

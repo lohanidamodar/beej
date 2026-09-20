@@ -111,6 +111,7 @@ nav:
 features:
   inAppUpdate: false
   notifications: true
+  devSuffix: false
 about:
   supportEmail: hi@example.com
 tooling:
@@ -118,6 +119,7 @@ tooling:
 ''');
       expect(input.inAppUpdate, isFalse);
       expect(input.notifications, isTrue);
+      expect(input.devSuffix, isFalse);
       expect(input.nepaliDates, isNull, reason: 'unmentioned stays unset');
       expect(input.supportEmail, 'hi@example.com');
       expect(input.fastlane, isFalse);

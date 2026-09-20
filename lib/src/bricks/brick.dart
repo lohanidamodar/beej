@@ -1,3 +1,4 @@
+import '../render/file_patch.dart';
 import '../render/pub_dep.dart';
 import '../spec/app_spec.dart';
 
@@ -59,6 +60,17 @@ abstract class Brick {
 
   /// Files this brick renders. Called only when [appliesTo] is true.
   List<TemplateFile> files(AppSpec spec) => const [];
+
+  /// Anchored edits to files `flutter create` produced.
+  ///
+  /// The escape hatch for the platform tree, which beej deliberately does not
+  /// template so that whatever changed in the last Flutter release lands for
+  /// free. Reach for this only when a value genuinely cannot be owned as a
+  /// whole file: `project.pbxproj` carries generated UUIDs, and owning
+  /// `AndroidManifest.xml` would mean re-shipping the activity config every
+  /// time Flutter changes it. Every edit asserts its anchor and fails
+  /// generation when it does not match.
+  List<FilePatch> patches(AppSpec spec) => const [];
 
   /// Runtime dependencies added to `pubspec.yaml`.
   List<PubDep> dependencies(AppSpec spec) => const [];

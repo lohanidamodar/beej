@@ -45,6 +45,13 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   `MarionetteBinding` is installed under `kDebugMode` only, so a release build
   carries none of it, and the MCP server is declared in `.mcp.json`. It needs
   `dart pub global activate marionette_mcp` once per machine.
+- **Debug builds that install beside the store build.** Debug and profile
+  builds carry `<applicationId>.dev` and a ` Dev` launcher label, so
+  `flutter run` adds a second icon rather than replacing the copy installed
+  from the store — testing a change never costs you the real app and its data.
+  Release is untouched, and so is everything that names the store build: the
+  Gradle `namespace`, `AppConfig.androidApplicationId`, the `market://` rate
+  link and fastlane's `APP_IDENTIFIER`. Off with `--no-dev-suffix`.
 - **Responsive helpers**, shared UI (`AsyncView`, `EmptyView`, `ErrorView`,
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.
@@ -94,6 +101,7 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 | `nav` | `tabs`, `drawer`, `tabs+drawer` | `tabs+drawer` |
 | `database` | `sqflite`, `none` | `none` |
 | `icons` | `picons`, `material` | `picons` |
+| `features.devSuffix` | bool | true |
 | `features.inAppUpdate` | bool | true |
 | `features.notifications` | bool | false |
 | `features.nepaliDates` | bool | false |
@@ -154,6 +162,14 @@ files over that skeleton. Bricks are additive — a feature that is off simply
 never contributes. Three registries in the generated app are the seams a
 feature extends: `core/bootstrap.dart`, `core/router/routes.dart`, and
 `features/settings/tiles.dart`.
+
+A brick can also **patch** a file `flutter create` wrote, for the few values
+that cannot be owned as a whole file — `project.pbxproj` carries generated
+UUIDs, and owning `AndroidManifest.xml` would mean re-shipping the activity
+config on every Flutter release. Patches are anchored and asserted: if a
+Flutter release changes one of those files, generation fails naming the file
+and the anchor rather than quietly skipping the edit. `--dry-run` lists them
+alongside the files.
 
 ## Install
 

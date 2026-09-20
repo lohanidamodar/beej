@@ -46,6 +46,7 @@ const _knownFeatureKeys = {
   'notifications',
   'nepaliDates',
   'review',
+  'devSuffix',
 };
 const _knownAboutKeys = {
   'privacyPolicyUrl',
@@ -198,6 +199,11 @@ SpecInput parseSpecYaml(String yamlText, {String source = 'spec'}) {
       source,
     ),
     review: _boolOrNull(featuresMap?['review'], 'features.review', source),
+    devSuffix: _boolOrNull(
+      featuresMap?['devSuffix'],
+      'features.devSuffix',
+      source,
+    ),
     privacyPolicyUrl: _stringOrNull(
       aboutMap?['privacyPolicyUrl'],
       'about.privacyPolicyUrl',

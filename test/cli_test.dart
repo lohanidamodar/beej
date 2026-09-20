@@ -26,11 +26,16 @@ void main() {
       expect(input.review, isNull);
       expect(input.inAppUpdate, isNull);
       expect(input.fastlane, isNull);
+      expect(input.devSuffix, isNull);
     });
 
     test('an explicit negation is recorded as false', () {
       final input = readFlagInput(parseFlags(['--no-review']));
       expect(input.review, isFalse);
+    });
+
+    test('--no-dev-suffix opts out of the .dev id', () {
+      expect(readFlagInput(parseFlags(['--no-dev-suffix'])).devSuffix, isFalse);
     });
 
     test('reads the choice options', () {

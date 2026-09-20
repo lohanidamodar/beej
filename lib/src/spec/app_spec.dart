@@ -45,6 +45,7 @@ class Features {
     this.notifications = false,
     this.nepaliDates = false,
     this.review = true,
+    this.devSuffix = true,
   });
 
   /// Play Core flexible in-app update, plus the snackbar state machine.
@@ -58,6 +59,13 @@ class Features {
 
   /// An `in_app_review` prompt, offered from Settings.
   final bool review;
+
+  /// Debug and profile builds install under `<applicationId>.dev`.
+  ///
+  /// Both stores' installers key "is this the same app" off that id, so a
+  /// different one means a build you are testing sits beside the copy
+  /// installed from the store instead of replacing it. Release is untouched.
+  final bool devSuffix;
 }
 
 /// URLs and strings the About module renders.
@@ -196,8 +204,48 @@ class AppSpec {
 
   // --- Derived values -------------------------------------------------
 
-  /// Android applicationId / iOS bundle id.
+  /// Android `applicationId` (and the Linux app id, which uses the same
+  /// scheme). **Not** the Apple bundle id — see [appleBundleId].
   String get applicationId => '$org.$name';
+
+  /// iOS and macOS bundle id.
+  ///
+  /// Apple does not accept an underscore in a bundle identifier, so
+  /// `flutter create` camel-cases the project name and strips whatever is
+  /// left over: `mero_nepali` becomes `com.example.meroNepali` on Apple while
+  /// staying `com.example.mero_nepali` on Android. The two are identical only
+  /// for a name with no underscore in it, which is why this went unnoticed —
+  /// so anything naming the Apple build has to use this, not [applicationId].
+  ///
+  /// Mirrors `CreateBase.createUTIIdentifier` in flutter_tools. It is
+  /// reimplemented rather than read back out of the generated project because
+  /// the plan is computed before `flutter create` runs.
+  String get appleBundleId {
+    final segments = '$org.${_camelCase(name)}'
+        .replaceAll(RegExp(r'[^a-zA-Z0-9\-\.-￿]+'), '')
+        .split('.')
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+    while (segments.length < 2) {
+      segments.add('untitled');
+    }
+    return segments.join('.');
+  }
+
+  /// `mero_nepali` -> `meroNepali`, as flutter_tools' `camelCase` does it —
+  /// including its quirk of leaving a trailing `_x` alone.
+  static String _camelCase(String value) {
+    var result = value;
+    var index = result.indexOf('_');
+    while (index != -1 && index < result.length - 2) {
+      result =
+          result.substring(0, index) +
+          result.substring(index + 1, index + 2).toUpperCase() +
+          result.substring(index + 2);
+      index = result.indexOf('_');
+    }
+    return result;
+  }
 
   /// `tipot` -> `Tipot`, `mero_nepali` -> `MeroNepali`. Used as the class
   /// prefix throughout the generated code (`TipotApp`, `TipotTokens`).

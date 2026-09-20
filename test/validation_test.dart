@@ -266,6 +266,21 @@ void main() {
       );
       expect(warningFields(spec), contains('signing'));
     });
+
+    test('an Appwrite project is warned that .dev needs registering', () {
+      // Appwrite authorizes by package name / bundle id, so the dev build is
+      // a second identity the console has never heard of. Every call from it
+      // fails on origin until someone adds it.
+      final spec = specOf(
+        const SpecInput(name: 'tipot', backend: Backend.appwrite),
+      );
+      expect(warningFields(spec), contains('features.devSuffix'));
+    });
+
+    test('without Appwrite there is nothing to register, so no warning', () {
+      final spec = specOf(const SpecInput(name: 'tipot'));
+      expect(warningFields(spec), isNot(contains('features.devSuffix')));
+    });
   });
 
   group('derived values', () {
@@ -274,6 +289,38 @@ void main() {
         specOf(const SpecInput(name: 'tipot')).applicationId,
         'com.example.tipot',
         reason: 'the built-in org is the neutral one flutter create uses',
+      );
+    });
+
+    test('appleBundleId camel-cases the name, because Apple bans _', () {
+      // The two ids are NOT interchangeable. flutter create derives the Apple
+      // one with createUTIIdentifier, and anything that assumed applicationId
+      // — the Xcode patch, the fastlane Appfile — silently addressed an app
+      // that does not exist.
+      final spec = specOf(const SpecInput(name: 'mero_nepali'));
+
+      expect(spec.applicationId, 'com.example.mero_nepali');
+      expect(spec.appleBundleId, 'com.example.meroNepali');
+    });
+
+    test('appleBundleId equals applicationId when there is no underscore', () {
+      final spec = specOf(const SpecInput(name: 'tipot'));
+
+      expect(spec.appleBundleId, spec.applicationId);
+    });
+
+    test('appleBundleId camel-cases every underscore, not just the first', () {
+      expect(
+        specOf(const SpecInput(name: 'a_b_c_app')).appleBundleId,
+        'com.example.aBCApp',
+      );
+    });
+
+    test('appleBundleId strips what Apple will not accept', () {
+      expect(
+        specOf(const SpecInput(name: 'tipot', org: 'com.my_org')).appleBundleId,
+        'com.myorg.tipot',
+        reason: 'an underscore in a segment is removed, not camel-cased',
       );
     });
 

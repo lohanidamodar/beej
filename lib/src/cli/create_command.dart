@@ -10,6 +10,7 @@ import '../spec/app_spec.dart';
 import '../spec/spec_input.dart';
 import '../spec/spec_parser.dart';
 import '../spec/validation.dart';
+import 'bricks_command.dart';
 import 'console.dart';
 import 'flag_input.dart';
 import 'prompts.dart';
@@ -158,7 +159,8 @@ class CreateCommand extends Command<int> {
     for (final entry in plan.fileCountByBrick.entries) {
       final brick = allBricks.firstWhere((b) => b.id == entry.key);
       console.line(
-        '    ${entry.key.padRight(16)} ${entry.value.toString().padLeft(3)} '
+        '    ${entry.key.padRight(brickIdWidth)} '
+        '${entry.value.toString().padLeft(3)} '
         '${console.dim(brick.summary)}',
       );
     }
@@ -168,6 +170,17 @@ class CreateCommand extends Command<int> {
       ..info(console.dim('files'));
     for (final file in plan.files) {
       console.line('    ${p.join(outputDirectory, spec.name, file.path)}');
+    }
+    if (plan.patches.isNotEmpty) {
+      console
+        ..line()
+        ..info(console.dim('patched in the flutter create skeleton'));
+      for (final planned in plan.patches) {
+        console.line(
+          '    ${planned.patch.path}\n'
+          '    ${' ' * 2}${console.dim(planned.patch.description)}',
+        );
+      }
     }
     if (plan.removals.isNotEmpty) {
       console

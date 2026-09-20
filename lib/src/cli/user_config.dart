@@ -86,6 +86,7 @@ const Map<String, List<String>> configurableKeys = <String, List<String>>{
   'tooling.screenshots': ['tooling', 'screenshots'],
   'agents.mcp': ['agents', 'mcp'],
   'agents.skills': ['agents', 'skills'],
+  'features.devSuffix': ['features', 'devSuffix'],
   'features.inAppUpdate': ['features', 'inAppUpdate'],
   'features.notifications': ['features', 'notifications'],
   'features.nepaliDates': ['features', 'nepaliDates'],

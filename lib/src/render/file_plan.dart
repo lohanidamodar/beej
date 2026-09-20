@@ -1,3 +1,4 @@
+import 'file_patch.dart';
 import 'pub_dep.dart';
 
 /// One file the generator will write.
@@ -20,6 +21,16 @@ class PlannedFile {
   final bool executable;
 }
 
+/// One edit the generator will make to a file `flutter create` wrote.
+class PlannedPatch {
+  const PlannedPatch({required this.patch, required this.brickId});
+
+  final FilePatch patch;
+
+  /// Which brick asked for it — shown in `--dry-run`, as for a written file.
+  final String brickId;
+}
+
 /// The complete set of changes for one generation, computed before anything
 /// touches the disk.
 ///
@@ -29,6 +40,7 @@ class PlannedFile {
 class FilePlan {
   const FilePlan({
     required this.files,
+    required this.patches,
     required this.removals,
     required this.dependencies,
     required this.devDependencies,
@@ -38,6 +50,9 @@ class FilePlan {
   });
 
   final List<PlannedFile> files;
+
+  /// Edits to files `flutter create` wrote that beej keeps but must adjust.
+  final List<PlannedPatch> patches;
 
   /// Paths `flutter create` wrote that should not survive.
   final List<String> removals;
@@ -77,4 +92,19 @@ class TemplateCollisionException implements Exception {
   String toString() =>
       'bricks "$firstBrick" and "$secondBrick" both write "$path" — '
       'one of them must be narrowed';
+}
+
+/// A brick patches a file another brick deletes.
+///
+/// Also always a bug in the brick definitions: the patch would either fail on
+/// a missing file or edit something about to be thrown away.
+class PatchTargetRemovedException implements Exception {
+  PatchTargetRemovedException(this.path, this.brickId);
+
+  final String path;
+  final String brickId;
+
+  @override
+  String toString() =>
+      'brick "$brickId" patches "$path", which another brick removes';
 }

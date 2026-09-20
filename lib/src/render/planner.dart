@@ -24,6 +24,7 @@ class Planner {
     final active = bricks.where((b) => b.appliesTo(spec)).toList();
 
     final files = <PlannedFile>[];
+    final patches = <PlannedPatch>[];
     final claimedBy = <String, String>{};
     final removals = <String>{};
     final dependencies = <PubDep>[];
@@ -69,11 +70,33 @@ class Planner {
         );
       }
 
+      for (final patch in brick.patches(spec)) {
+        patches.add(PlannedPatch(patch: patch, brickId: brick.id));
+      }
+
       removals.addAll(brick.removes(spec));
       dependencies.addAll(brick.dependencies(spec));
       devDependencies.addAll(brick.devDependencies(spec));
       dependencyOverrides.addAll(brick.dependencyOverrides(spec));
       assetDirs.addAll(brick.assetDirs(spec));
+    }
+
+    // Patching a file beej also writes would make the result depend on which
+    // step ran last — and is never what was meant, since a file beej owns can
+    // simply carry the value. Two bricks patching the same file is fine:
+    // their edits apply in brick order and each asserts its own anchor.
+    for (final planned in patches) {
+      final claimant = claimedBy[planned.patch.path];
+      if (claimant != null) {
+        throw TemplateCollisionException(
+          planned.patch.path,
+          claimant,
+          planned.brickId,
+        );
+      }
+      if (removals.contains(planned.patch.path)) {
+        throw PatchTargetRemovedException(planned.patch.path, planned.brickId);
+      }
     }
 
     // The pubspec is assembled from what the bricks asked for, not rendered
@@ -94,6 +117,7 @@ class Planner {
 
     return FilePlan(
       files: files,
+      patches: patches,
       removals: removals.toList()..sort(),
       dependencies: _dedupe(dependencies),
       devDependencies: _dedupe(devDependencies),

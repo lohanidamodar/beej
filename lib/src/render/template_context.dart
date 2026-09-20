@@ -1,3 +1,4 @@
+import '../bricks/platform_identity_brick.dart';
 import '../bricks/versions.dart';
 import '../spec/app_spec.dart';
 import '../spec/enums.dart';
@@ -42,6 +43,10 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'description': spec.description,
     'org': spec.org,
     'applicationId': spec.applicationId,
+    // Apple bans underscores in a bundle id, so this is not applicationId for
+    // any project whose name has one. Anything naming the Apple build — the
+    // fastlane Appfile, the Matchfile, the Xcode patch — needs this one.
+    'appleBundleId': spec.appleBundleId,
 
     // --- Platforms ---
     'android': spec.hasAndroid,
@@ -106,6 +111,11 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'notifications': spec.features.notifications,
     'nepaliDates': spec.features.nepaliDates,
     'review': spec.features.review,
+    'devSuffix': spec.features.devSuffix,
+    'devIdSuffix': devIdSuffix,
+    // The launcher label for builds that are not the store build. The
+    // unsuffixed one is `appName`.
+    'devAppLabel': '${spec.displayName}$devLabelSuffix',
 
     // --- Tooling ---
     'fastlane': spec.tooling.fastlane,
