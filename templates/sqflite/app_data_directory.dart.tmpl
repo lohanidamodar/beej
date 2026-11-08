@@ -1,0 +1,59 @@
+import 'dart:io' show Directory;
+
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
+import 'package:path_provider/path_provider.dart';
+
+/// Which path_provider directory holds the app's own data on a platform.
+enum AppDataLocation {
+  /// `getApplicationDocumentsDirectory()` — app-private on Android and iOS.
+  documents,
+
+  /// `getApplicationSupportDirectory()` — the per-app data folder on desktop.
+  support,
+}
+
+/// Where the app keeps its own files on [platform].
+///
+/// On Android and iOS the documents directory is private to the app, so that
+/// is where data goes. On desktop it is the user's real **Documents** folder —
+/// `C:\Users\<user>\Documents` on Windows — and app data has no business
+/// there; desktop uses the support directory instead:
+///
+/// - Windows: `%APPDATA%\<CompanyName>\<ProductName>`, read from
+///   `windows/runner/Runner.rc` (the org and the package name by default);
+/// - macOS: `~/Library/Application Support/<bundle id>`;
+/// - Linux: `~/.local/share/<APPLICATION_ID>`.
+///
+/// Never change the mobile answer: installed users' data lives there.
+@visibleForTesting
+AppDataLocation appDataLocationFor(
+  TargetPlatform platform, {
+  bool isWeb = false,
+}) {
+  if (isWeb) return AppDataLocation.documents;
+  return switch (platform) {
+    TargetPlatform.windows ||
+    TargetPlatform.macOS ||
+    TargetPlatform.linux => AppDataLocation.support,
+    TargetPlatform.android ||
+    TargetPlatform.iOS ||
+    TargetPlatform.fuchsia => AppDataLocation.documents,
+  };
+}
+
+/// The directory for the app's own data: databases, caches, settings files.
+///
+/// Everything the app stores for itself goes under here. Files the user
+/// chooses to save through a save dialog may still go wherever they pick.
+Future<Directory> appDataDirectory() async {
+  final directory =
+      switch (appDataLocationFor(defaultTargetPlatform, isWeb: kIsWeb)) {
+        AppDataLocation.documents => await getApplicationDocumentsDirectory(),
+        AppDataLocation.support => await getApplicationSupportDirectory(),
+      };
+  // The support directory is not guaranteed to exist on first launch, and
+  // opening a database inside a missing folder fails.
+  await directory.create(recursive: true);
+  return directory;
+}

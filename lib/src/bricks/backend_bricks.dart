@@ -89,7 +89,15 @@ class SqfliteBrick extends Brick {
       'sqflite/v1_initial.sql.tmpl',
       'lib/core/db/migrations/v1_initial.sql',
     ),
+    TemplateFile(
+      'sqflite/app_data_directory.dart.tmpl',
+      'lib/core/storage/app_data_directory.dart',
+    ),
     TemplateFile('sqflite/database_test.dart.tmpl', 'test/database_test.dart'),
+    TemplateFile(
+      'sqflite/app_data_directory_test.dart.tmpl',
+      'test/app_data_directory_test.dart',
+    ),
   ];
 
   @override

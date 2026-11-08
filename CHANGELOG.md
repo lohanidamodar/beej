@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Desktop app data stays out of Documents
+
+`database: sqflite` opened its file under `getApplicationDocumentsDirectory()`,
+which on Android and iOS is app-private but on desktop is the user's real
+Documents folder — so a Windows build dropped `<name>.db` into
+`C:\Users\<user>\Documents`. Generated apps now get
+`lib/core/storage/app_data_directory.dart`: desktop uses
+`getApplicationSupportDirectory()` (`%APPDATA%\<org>\<name>` on Windows),
+and Android, iOS and web keep exactly the path they had. A test pins the
+choice for every platform. New apps have no old data, so there is no
+migration step.
+
 ### Debug builds install beside the store build
 
 Debug and profile builds now carry `<applicationId>.dev` and a ` Dev` launcher

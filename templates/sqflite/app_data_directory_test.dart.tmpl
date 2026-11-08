@@ -1,0 +1,38 @@
+import 'package:flutter/foundation.dart' show TargetPlatform;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{name}}/core/storage/app_data_directory.dart';
+
+/// Pins where app data lives on every platform.
+///
+/// The desktop answer keeps data out of the user's Documents folder; the
+/// mobile answer must never move, or installed users lose their data.
+void main() {
+  group('appDataLocationFor', () {
+    for (final platform in [
+      TargetPlatform.windows,
+      TargetPlatform.macOS,
+      TargetPlatform.linux,
+    ]) {
+      test('$platform uses the support directory', () {
+        expect(appDataLocationFor(platform), AppDataLocation.support);
+      });
+    }
+
+    for (final platform in [
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+      TargetPlatform.fuchsia,
+    ]) {
+      test('$platform keeps the documents directory', () {
+        expect(appDataLocationFor(platform), AppDataLocation.documents);
+      });
+    }
+
+    test('web keeps the documents directory', () {
+      expect(
+        appDataLocationFor(TargetPlatform.windows, isWeb: true),
+        AppDataLocation.documents,
+      );
+    });
+  });
+}

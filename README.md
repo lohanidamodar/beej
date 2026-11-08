@@ -114,6 +114,14 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 
 `beej bricks` lists what each contributes.
 
+**Where app data lives.** `database: sqflite` stores its file through
+`appDataDirectory()` in `lib/core/storage/app_data_directory.dart`, and
+anything else the app keeps for itself — caches, settings files, a Hive box —
+belongs there too. On Android and iOS that is the app-private documents
+directory. On desktop it is the support directory (`%APPDATA%\<org>\<name>`
+on Windows, from the runner's company and product names), never `getApplicationDocumentsDirectory()`, which on desktop is
+the user's real Documents folder.
+
 ## Making it yours
 
 beej ships neutral defaults — `com.example`, English only, no About URLs — so
