@@ -1,0 +1,9 @@
+# pub reads this file *instead of* .gitignore in this directory, so the
+# .gitignore entries are repeated here.
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# Launch drafts are for the person posting them, not for package users.
+docs/social/
