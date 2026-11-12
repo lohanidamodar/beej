@@ -24,6 +24,7 @@ String writePubspec({
     ..writeln()
     ..writeln('environment:')
     ..writeln('  sdk: ${Versions.dartSdk}')
+    ..writeln("  flutter: '${Versions.flutterSdk}'")
     ..writeln()
     ..writeln('dependencies:');
 

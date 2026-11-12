@@ -20,7 +20,14 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "{{applicationId}}"
+{{^notifications}}
     compileSdk = flutter.compileSdkVersion
+{{/notifications}}
+{{#notifications}}
+    // flutter_local_notifications 23 compiles against SDK 37, a level above
+    // Flutter 3.50's default. maxOf keeps following Flutter once it catches up.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
+{{/notifications}}
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -70,18 +77,8 @@ android {
         // references. AppConfig.androidApplicationId is not suffixed either —
         // the market:// link has to reach the published app.
         //
-        // profile has to be named explicitly. The Flutter Gradle Plugin
-        // creates it with initWith(debug) while the plugin is being applied,
-        // which is before this block runs, so it does not inherit what is set
-        // on debug here. getByName fails the build if a future Flutter stops
-        // creating it, which is the right outcome — silently dropping the
-        // suffix is how a debug build ends up overwriting a store install.
+        // profile gets the same treatment in androidComponents below.
         debug {
-            applicationIdSuffix = "{{devIdSuffix}}"
-            manifestPlaceholders["appLabel"] = "{{devAppLabel}}"
-        }
-
-        getByName("profile") {
             applicationIdSuffix = "{{devIdSuffix}}"
             manifestPlaceholders["appLabel"] = "{{devAppLabel}}"
         }
@@ -96,6 +93,31 @@ android {
         }
     }
 }
+
+{{#devSuffix}}
+
+// The profile build installs beside the store build too, but its suffix
+// cannot go on the build type. The Flutter Gradle Plugin creates `profile`
+// with initWith(debug) before the buildTypes block runs, so it inherits
+// nothing set there, and since Flutter 3.50 it also copies every app build
+// type a plugin lacks onto that plugin's library project. Plugins have no
+// `profile`, so an applicationIdSuffix set on it lands in a library, which
+// AGP rejects: "Library projects cannot set applicationIdSuffix". The
+// variant API changes this app's variant alone.
+//
+// withBuildType matches nothing, silently, if a future Flutter stops
+// creating `profile`. The check makes that a build failure instead, because
+// a silently dropped suffix is how a profile build overwrites a store install.
+check(android.buildTypes.findByName("profile") != null) {
+    "Flutter no longer creates a profile build type; move the .dev suffix"
+}
+androidComponents {
+    onVariants(selector().withBuildType("profile")) { variant ->
+        variant.applicationId.set("{{applicationId}}{{devIdSuffix}}")
+        variant.manifestPlaceholders.put("appLabel", "{{devAppLabel}}")
+    }
+}
+{{/devSuffix}}
 
 kotlin {
     compilerOptions {

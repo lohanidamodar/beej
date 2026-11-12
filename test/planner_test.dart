@@ -1158,17 +1158,48 @@ void main() {
       final gradle = contentOf(plan, 'android/app/build.gradle.kts');
 
       expect(gradle, contains('debug {'));
-      expect(gradle, contains('getByName("profile") {'));
       expect(
         'applicationIdSuffix = ".dev"'.allMatches(gradle).length,
-        2,
-        reason: 'debug and profile, and nothing else',
+        1,
+        reason: 'only debug carries it on the build type',
+      );
+      // Flutter 3.50 copies app build types onto plugin library projects,
+      // and a library rejects applicationIdSuffix — so profile is suffixed
+      // through the variant API, never on its build type.
+      expect(gradle, isNot(contains('getByName("profile") {')));
+      expect(gradle, contains('selector().withBuildType("profile")'));
+      expect(
+        gradle,
+        contains('variant.applicationId.set("com.example.tipot.dev")'),
       );
 
       // The release block is the one that gets uploaded.
-      final release = gradle.substring(gradle.indexOf('release {'));
+      // Up to the end of the android block: the comments after it mention
+      // applicationIdSuffix while explaining why profile cannot use it.
+      final start = gradle.indexOf('release {');
+      final release = gradle.substring(start, gradle.indexOf('\n}\n', start));
       expect(release, isNot(contains('applicationIdSuffix')));
     });
+
+    test(
+      'compileSdk rises to 37 only for flutter_local_notifications',
+      () async {
+        final plain = contentOf(
+          await planFor(const SpecInput(name: 'tipot')),
+          'android/app/build.gradle.kts',
+        );
+        expect(plain, contains('compileSdk = flutter.compileSdkVersion'));
+
+        final notifying = contentOf(
+          await planFor(const SpecInput(name: 'tipot', notifications: true)),
+          'android/app/build.gradle.kts',
+        );
+        expect(
+          notifying,
+          contains('compileSdk = maxOf(flutter.compileSdkVersion, 37)'),
+        );
+      },
+    );
 
     test('the namespace and the store link keep the unsuffixed id', () async {
       final plan = await planFor(const SpecInput(name: 'tipot'));
@@ -1190,6 +1221,7 @@ void main() {
       final gradle = contentOf(plan, 'android/app/build.gradle.kts');
 
       expect(gradle, isNot(contains('applicationIdSuffix')));
+      expect(gradle, isNot(contains('androidComponents')));
       expect(gradle, contains(r'manifestPlaceholders["appLabel"] = "Tipot"'));
       expect(
         plan.patches.map((p) => p.patch.path),

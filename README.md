@@ -181,6 +181,9 @@ alongside the files.
 
 ## Install
 
+Requires Flutter 3.50 (Dart 3.14) or newer. Generated apps target the same
+line: `sdk: ^3.14.0`, `flutter: '>=3.50.0'`.
+
 ```sh
 dart pub global activate beej
 ```

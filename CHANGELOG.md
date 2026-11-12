@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+### Built for Flutter 3.50
+
+beej and the apps it generates now target Flutter 3.50 / Dart 3.14. Generated
+pubspecs declare `sdk: ^3.14.0` and `flutter: '>=3.50.0'`, the release and CI
+workflows build with 3.50.0, and beej's own package needs Dart 3.14.
+
+`flutter create` on 3.50 writes AGP 9.3.1, Gradle 9.5.0 and minSdk 24, and
+generated apps take those unchanged. Two Android fixes came with it:
+
+- **The `.dev` profile build broke every Android build.** Flutter 3.50 copies
+  each app build type that a plugin lacks onto the plugin's library project,
+  and plugins have no `profile`, so the `applicationIdSuffix` beej set there
+  landed in a library: "Library projects cannot set applicationIdSuffix".
+  The profile suffix is now applied through the variant API to the app's own
+  variant, and the build fails loudly if Flutter ever stops creating
+  `profile`. Debug is unchanged.
+- **`compileSdk` rises to 37 with notifications.** flutter_local_notifications
+  23 compiles against SDK 37, one level above Flutter's default, so the app
+  uses `maxOf(flutter.compileSdkVersion, 37)` when that brick is on.
+
+Package majors taken: `go_router` 18, `nepali_date_picker` 8 and
+`cupertino_icons` 2 (each a move onto `material_ui`/`cupertino_ui`),
+`flutter_local_notifications` 23 and `marionette_flutter` 0.7.
+`material_ui` now starts from 1.1.0.
+
+Held back:
+
+- `appwrite` stays on 26. The 27 SDK targets Appwrite server 2.3 and drops
+  `Account.listLogs` and `Client.setDevKey`, and an SDK major has to match the
+  server the apps talk to.
+- `google_fonts` stays on 8. The shared `popup_bits_design` package pins
+  `^8.2.1`, so 9 cannot resolve beside it. 8.2.1 analyzes clean on 3.50.
+
+The templates already used `material_ui` and no deprecated JS interop, so the
+3.50 deprecations needed no code changes; a generated app analyzes clean.
+
 ### Desktop app data stays out of Documents
 
 `database: sqflite` opened its file under `getApplicationDocumentsDirectory()`,
