@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
 
-### Built for Flutter 3.50
+### Updated for Flutter 3.50 / Dart 3.14
 
 beej and the apps it generates now target Flutter 3.50 / Dart 3.14. Generated
 pubspecs declare `sdk: ^3.14.0` and `flutter: '>=3.50.0'`, the release and CI
@@ -37,6 +37,11 @@ Held back:
 
 The templates already used `material_ui` and no deprecated JS interop, so the
 3.50 deprecations needed no code changes; a generated app analyzes clean.
+
+### `beej --version` prints the real version
+
+It printed `0.1.0` for every release since 0.1.0. The constant now lives in
+`lib/src/version.dart`, and a test fails if it drifts from `pubspec.yaml`.
 
 ### Desktop app data stays out of Documents
 

@@ -7,8 +7,7 @@ import 'package:beej/src/cli/console.dart';
 import 'package:beej/src/cli/create_command.dart';
 import 'package:beej/src/cli/spec_command.dart';
 import 'package:beej/src/render/template_source.dart';
-
-const String beejVersion = '0.1.0';
+import 'package:beej/src/version.dart';
 
 Future<void> main(List<String> arguments) async {
   final console = Console();
