@@ -1,0 +1,61 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:{{name}}/core/theme/accent.dart';
+import 'package:{{name}}/core/theme/app_theme.dart';
+
+/// WCAG contrast ratio between two opaque colours, 1 to 21.
+double contrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  final (lighter, darker) = la > lb ? (la, lb) : (lb, la);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/// Text clears WCAG AA (4.5:1) in both themes, for every accent a user can
+/// pick.
+///
+/// `test/accessibility_test.dart` checks what the shipped screens render with
+/// the default accent. This checks the colour scheme itself, across all of
+/// them, so a screen added later inherits colours that are already known to
+/// pass, whichever accent its user chose.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  for (final accent in Accents.all) {
+    for (final brightness in Brightness.values) {
+      test('${accent.id}, ${brightness.name}: text pairs clear 4.5:1', () {
+        final theme = brightness == Brightness.light
+            ? AppTheme.light(accent)
+            : AppTheme.dark(accent);
+        final s = theme.colorScheme;
+
+        // Foreground on background, as the generated widgets use them.
+        final pairs = <String, (Color, Color)>{
+          'body text': (s.onSurface, s.surface),
+          'secondary text': (s.onSurfaceVariant, s.surface),
+          'secondary text on a card': (
+            s.onSurfaceVariant,
+            s.surfaceContainerLow,
+          ),
+          'section labels and text buttons': (s.primary, s.surface),
+          'filled buttons': (s.onPrimary, s.primary),
+          'selected segments and nav indicators': (
+            s.onSecondaryContainer,
+            s.secondaryContainer,
+          ),
+          'primary containers': (s.onPrimaryContainer, s.primaryContainer),
+          'error text': (s.error, s.surface),
+          'error containers': (s.onErrorContainer, s.errorContainer),
+        };
+
+        // Every failing pair at once, so one run shows the whole problem.
+        final failing = [
+          for (final MapEntry(key: use, value: (fg, bg)) in pairs.entries)
+            if (contrastRatio(fg, bg) < 4.5)
+              '$use: ${contrastRatio(fg, bg).toStringAsFixed(2)}:1',
+        ];
+        expect(failing, isEmpty);
+      });
+    }
+  }
+}

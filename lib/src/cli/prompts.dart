@@ -208,6 +208,18 @@ Future<SpecInput> promptForMissing(
     );
   }
 
+  if (result.onboarding == null) {
+    result = result.overriddenBy(
+      SpecInput(
+        onboarding: _confirm(
+          console,
+          'First-launch onboarding?',
+          defaultYes: false,
+        ),
+      ),
+    );
+  }
+
   console.line();
   return result;
 }

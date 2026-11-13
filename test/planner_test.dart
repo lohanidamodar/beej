@@ -33,6 +33,7 @@ final coveringSpecs = <AppSpec>[
       database: DatabaseKind.sqflite,
       notifications: true,
       nepaliDates: true,
+      onboarding: true,
       keystoreStorePassword: 'longenough',
     ),
   ),
@@ -1294,6 +1295,141 @@ void main() {
           );
         }
       }
+    });
+  });
+
+  group('accessibility, onboarding and hooks', () {
+    test('every app gets the accessibility suite and the hook seams', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      expect(
+        pathsOf(plan),
+        containsAll([
+          'test/accessibility_test.dart',
+          'test/theme_contrast_test.dart',
+          'test/hooks_test.dart',
+          'test/support/test_app.dart',
+          'lib/core/util/text_scale.dart',
+          'lib/core/hooks/analytics.dart',
+          'lib/core/hooks/user_feedback.dart',
+        ]),
+      );
+    });
+
+    test('the platform text scale is multiplied, never capped', () async {
+      for (final router in RouterKind.values) {
+        final app = contentOf(
+          await planFor(
+            SpecInput(
+              name: 'a1',
+              router: router,
+              platforms: const {TargetPlatform.android},
+            ),
+          ),
+          'lib/core/app.dart',
+        );
+        expect(app, contains('UserTextScaler('), reason: router.wire);
+        expect(app, isNot(contains('maxScaleFactor')), reason: router.wire);
+      }
+    });
+
+    test('the theme keeps 48dp targets on desktop too', () async {
+      for (final designSystem in DesignSystem.values) {
+        final theme = contentOf(
+          await planFor(SpecInput(name: 'a1', designSystem: designSystem)),
+          'lib/core/theme/app_theme.dart',
+        );
+        expect(
+          theme,
+          contains('materialTapTargetSize: MaterialTapTargetSize.padded'),
+          reason: designSystem.wire,
+        );
+      }
+    });
+
+    test('onboarding is off by default and contributes nothing', () async {
+      final plan = await planFor(const SpecInput(name: 'a1'));
+      expect(pathsOf(plan).where((p) => p.contains('onboarding')), isEmpty);
+      expect(
+        contentOf(plan, 'lib/core/app.dart'),
+        isNot(contains('Onboarding')),
+      );
+      expect(
+        contentOf(plan, 'lib/l10n/app_en.arb'),
+        isNot(contains('onboardingSkip')),
+      );
+      // No app data directory without something that stores there.
+      expect(
+        pathsOf(plan),
+        isNot(contains('lib/core/storage/app_data_directory.dart')),
+      );
+    });
+
+    test('onboarding gates the app and keeps its flag in app data', () async {
+      final plan = await planFor(
+        const SpecInput(name: 'a1', onboarding: true, locales: ['en', 'ne']),
+      );
+      expect(
+        pathsOf(plan),
+        containsAll([
+          'lib/features/onboarding/onboarding_screen.dart',
+          'lib/features/onboarding/onboarding_store.dart',
+          'lib/features/onboarding/onboarding_gate.dart',
+          'lib/features/onboarding/onboarding_controller.dart',
+          'test/onboarding_test.dart',
+          // Brought in by onboarding alone, without sqflite.
+          'lib/core/storage/app_data_directory.dart',
+        ]),
+      );
+      expect(plan.dependencies.map((d) => d.name), contains('path_provider'));
+      expect(contentOf(plan, 'lib/core/app.dart'), contains('OnboardingGate('));
+      expect(
+        contentOf(plan, 'lib/main.dart'),
+        contains('initialComplete: bootstrap.onboardingComplete'),
+      );
+      expect(
+        contentOf(plan, 'lib/features/onboarding/onboarding_store.dart'),
+        contains('appDataDirectory'),
+      );
+      for (final arb in ['lib/l10n/app_en.arb', 'lib/l10n/app_ne.arb']) {
+        expect(contentOf(plan, arb), contains('"onboardingSkip"'), reason: arb);
+      }
+    });
+
+    test('the web build keeps the onboarding flag in preferences', () async {
+      final web = contentOf(
+        await planFor(const SpecInput(name: 'a1', onboarding: true)),
+        'lib/features/onboarding/onboarding_store.dart',
+      );
+      expect(web, contains('PreferencesOnboardingStore'));
+
+      final mobile = contentOf(
+        await planFor(
+          const SpecInput(
+            name: 'a1',
+            onboarding: true,
+            platforms: {TargetPlatform.android, TargetPlatform.ios},
+          ),
+        ),
+        'lib/features/onboarding/onboarding_store.dart',
+      );
+      expect(mobile, isNot(contains('PreferencesOnboardingStore')));
+      expect(mobile, isNot(contains('shared_preferences')));
+    });
+
+    test('sqflite and onboarding share one app data directory', () async {
+      final plan = await planFor(
+        const SpecInput(
+          name: 'a1',
+          onboarding: true,
+          database: DatabaseKind.sqflite,
+        ),
+      );
+      expect(
+        plan.files
+            .where((f) => f.path == 'lib/core/storage/app_data_directory.dart')
+            .length,
+        1,
+      );
     });
   });
 

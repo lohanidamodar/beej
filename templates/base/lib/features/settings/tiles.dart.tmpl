@@ -9,6 +9,7 @@ import '../../core/config/app_config.dart';
 {{/hasMoreApps}}
 import '../../core/error/error_logger.dart';
 import '../../core/error/error_record.dart';
+import '../../core/hooks/user_feedback.dart';
 import '../../core/router/navigation.dart';
 import '../../core/router/routes.dart';
 {{#tilesUseFeedback}}
@@ -43,6 +44,7 @@ class SettingsSection {
 /// can be added without touching the same lines.
 List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context);
+  final feedback = ref.watch(userFeedbackProvider);
 
   return [
     SettingsSection(
@@ -81,6 +83,16 @@ List<SettingsSection> settingsSections(BuildContext context, WidgetRef ref) {
     SettingsSection(
       title: l10n.settingsAbout,
       tiles: [
+        // Only when a feedback package is installed: see
+        // core/hooks/user_feedback.dart. A row that does nothing is
+        // worse than no row.
+        if (feedback.isAvailable)
+          ListTile(
+            leading: const Icon({{iconFeedback}}),
+            title: Text(l10n.settingsFeedback),
+            subtitle: Text(l10n.settingsFeedbackSubtitle),
+            onTap: () => feedback.request(context),
+          ),
         // Rebuilds itself as errors arrive, so the row shows a count
         // without Settings having to watch anything.
         ValueListenableBuilder<List<ErrorRecord>>(

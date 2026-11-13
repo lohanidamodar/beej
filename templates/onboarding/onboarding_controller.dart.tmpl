@@ -1,0 +1,46 @@
+import 'dart:developer' as developer;
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/error/error_logger.dart';
+import 'onboarding_store.dart';
+
+/// Whether onboarding is done: `true` once it has been finished or skipped.
+///
+/// Overridden in `main.dart` with the value bootstrap read from disk, so the
+/// first frame already knows whether to show it. Without that override it
+/// reports "done", which is what every test that is not about onboarding
+/// wants.
+final onboardingControllerProvider =
+    NotifierProvider<OnboardingController, bool>(OnboardingController.new);
+
+class OnboardingController extends Notifier<bool> {
+  OnboardingController({this.initialComplete = true, this.store});
+
+  final bool initialComplete;
+
+  /// Null in tests that do not care whether completion is persisted.
+  final OnboardingStore? store;
+
+  @override
+  bool build() => initialComplete;
+
+  /// Finish onboarding. The app moves on immediately; the write follows.
+  ///
+  /// A failed write is logged rather than surfaced: the cost is seeing the
+  /// welcome again next launch, which is not worth interrupting anyone over.
+  Future<void> complete() async {
+    state = true;
+    try {
+      await store?.markComplete();
+    } catch (error, stackTrace) {
+      developer.log(
+        'could not persist onboarding completion',
+        name: 'onboarding',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      ErrorLogger.instance.record(error, stackTrace, source: 'onboarding');
+    }
+  }
+}

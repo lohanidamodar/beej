@@ -80,6 +80,7 @@ final matrix = <MatrixCase>[
       database: DatabaseKind.sqflite,
       notifications: true,
       nepaliDates: true,
+      onboarding: true,
       tabs: [
         TabSpec(id: 'home', label: 'Home', icon: 'house'),
         TabSpec(id: 'notes', label: 'Notes', icon: 'note'),
@@ -155,6 +156,28 @@ final matrix = <MatrixCase>[
       githubWorkflow: false,
     ),
     why: 'the sqflite FFI branch, and no mobile-only assumptions',
+  ),
+  MatrixCase(
+    'onboarding_desktop',
+    const SpecInput(
+      name: 'onboarding_desktop_app',
+      platforms: {
+        TargetPlatform.linux,
+        TargetPlatform.macos,
+        TargetPlatform.windows,
+      },
+      router: RouterKind.navigator,
+      navStyle: NavStyle.drawer,
+      onboarding: true,
+      icons: IconSet.material,
+      inAppUpdate: false,
+      fastlane: false,
+      githubWorkflow: false,
+    ),
+    // `everything` covers onboarding with web, go_router and sign-in.
+    why:
+        'onboarding with only the marker-file store, on the Navigator '
+        'with an inline drawer, and the drawer’s desktop focus order',
   ),
 ];
 

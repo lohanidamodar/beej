@@ -1,0 +1,39 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+
+/// How a user sends feedback from inside the app.
+///
+/// A seam, not an integration. Settings shows a "Send feedback" row only
+/// while [isAvailable] is true, so with the default [NoopUserFeedback] there
+/// is no row at all, and no button that does nothing. To connect a package,
+/// implement this interface over it and override [userFeedbackProvider] in
+/// `main.dart`:
+///
+/// ```dart
+/// userFeedbackProvider.overrideWithValue(MyFeedback(...)),
+/// ```
+abstract interface class UserFeedback {
+  /// Whether there is anywhere for feedback to go.
+  bool get isAvailable;
+
+  /// Ask the user for feedback, presenting whatever UI the implementation
+  /// needs from [context].
+  Future<void> request(BuildContext context);
+}
+
+/// No feedback channel. The default until a real implementation is
+/// installed.
+class NoopUserFeedback implements UserFeedback {
+  const NoopUserFeedback();
+
+  @override
+  bool get isAvailable => false;
+
+  @override
+  Future<void> request(BuildContext context) async {}
+}
+
+/// The installed [UserFeedback].
+final userFeedbackProvider = Provider<UserFeedback>(
+  (ref) => const NoopUserFeedback(),
+);

@@ -1,0 +1,40 @@
+import 'package:material_ui/material_ui.dart';
+
+/// The platform's text scale with the user's in-app text size on top.
+///
+/// Multiplies rather than clamps. The device setting is the user's
+/// accessibility choice, so it is never capped: at the system's 200%, text
+/// renders at 200% (more with a larger in-app size), and every screen has to
+/// lay out at that size. `test/accessibility_test.dart` pumps each one at 2.0
+/// to hold that. Nonlinear platform scaling (Android 14 and later) is kept,
+/// because [platform] still does the per-size work.
+@immutable
+class UserTextScaler extends TextScaler {
+  const UserTextScaler({required this.platform, required this.factor});
+
+  /// What the device asked for, from `MediaQuery.textScalerOf`.
+  final TextScaler platform;
+
+  /// The in-app text size from Settings; see `textScaleSteps`.
+  final double factor;
+
+  @override
+  double scale(double fontSize) => platform.scale(fontSize) * factor;
+
+  // Required by the interface, which still declares it while deprecated.
+  @override
+  // ignore: deprecated_member_use
+  double get textScaleFactor => platform.textScaleFactor * factor;
+
+  @override
+  bool operator ==(Object other) =>
+      other is UserTextScaler &&
+      other.platform == platform &&
+      other.factor == factor;
+
+  @override
+  int get hashCode => Object.hash(platform, factor);
+
+  @override
+  String toString() => 'UserTextScaler($platform × $factor)';
+}

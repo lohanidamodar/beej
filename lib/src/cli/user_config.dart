@@ -90,6 +90,7 @@ const Map<String, List<String>> configurableKeys = <String, List<String>>{
   'features.inAppUpdate': ['features', 'inAppUpdate'],
   'features.notifications': ['features', 'notifications'],
   'features.nepaliDates': ['features', 'nepaliDates'],
+  'features.onboarding': ['features', 'onboarding'],
   'features.review': ['features', 'review'],
 };
 

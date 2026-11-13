@@ -85,6 +85,20 @@ class BaseBrick extends Brick {
       'base/lib/core/util/launcher.dart.tmpl',
       'lib/core/util/launcher.dart',
     ),
+    const TemplateFile(
+      'base/lib/core/util/text_scale.dart.tmpl',
+      'lib/core/util/text_scale.dart',
+    ),
+
+    // --- Seams for shared packages, no-op until one is installed ---
+    const TemplateFile(
+      'base/lib/core/hooks/analytics.dart.tmpl',
+      'lib/core/hooks/analytics.dart',
+    ),
+    const TemplateFile(
+      'base/lib/core/hooks/user_feedback.dart.tmpl',
+      'lib/core/hooks/user_feedback.dart',
+    ),
 
     // --- Localization: one ARB per chosen locale ---
     // `<% %>` delimiters: an ICU plural is written
@@ -169,6 +183,22 @@ class BaseBrick extends Brick {
     const TemplateFile(
       'base/test/responsive_test.dart.tmpl',
       'test/responsive_test.dart',
+    ),
+    const TemplateFile(
+      'base/test/support/test_app.dart.tmpl',
+      'test/support/test_app.dart',
+    ),
+    const TemplateFile(
+      'base/test/accessibility_test.dart.tmpl',
+      'test/accessibility_test.dart',
+    ),
+    const TemplateFile(
+      'base/test/theme_contrast_test.dart.tmpl',
+      'test/theme_contrast_test.dart',
+    ),
+    const TemplateFile(
+      'base/test/hooks_test.dart.tmpl',
+      'test/hooks_test.dart',
     ),
   ];
 

@@ -81,6 +81,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       decoration: InputDecoration(
                         labelText: l10n.authPassword,
                         suffixIcon: IconButton(
+                          tooltip: _obscured
+                              ? l10n.authShowPassword
+                              : l10n.authHidePassword,
                           icon: Icon(
                             _obscured
                                 ? Icons.visibility_outlined

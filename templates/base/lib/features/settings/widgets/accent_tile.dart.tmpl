@@ -81,11 +81,11 @@ class _Swatch extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
-        // 44 is the smallest comfortable touch target; the painted circle is
+        // The hit area is the full touch target; the painted circle is
         // smaller, so the swatches read as light without being hard to hit.
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: Sizes.minTouchTarget,
+          height: Sizes.minTouchTarget,
           child: Center(
             child: AnimatedContainer(
               duration: Motion.fast,

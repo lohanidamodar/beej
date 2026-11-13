@@ -1,0 +1,31 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'onboarding_controller.dart';
+import 'onboarding_screen.dart';
+
+/// Shows onboarding instead of the app until it has been finished or skipped.
+///
+/// Sits in `MaterialApp.builder`, above the router, so it works the same for
+/// either router and comes before sign-in: a welcome belongs before a login
+/// wall, not after it. The router is untouched underneath, so whatever
+/// location it was opened at is where the app lands afterwards.
+class OnboardingGate extends ConsumerWidget {
+  const OnboardingGate({required this.child, super.key});
+
+  /// The app's own navigator, from `MaterialApp.builder`.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(onboardingControllerProvider)) return child;
+    // Its own Navigator: the builder sits above the app's, and buttons'
+    // tooltips need an Overlay to draw in.
+    return Navigator(
+      onGenerateRoute: (settings) => MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => const OnboardingScreen(),
+      ),
+    );
+  }
+}

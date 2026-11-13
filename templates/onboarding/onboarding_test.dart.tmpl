@@ -1,0 +1,160 @@
+import 'dart:io' show Directory, File, Platform;
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+{{#web}}
+import 'package:shared_preferences/shared_preferences.dart';
+{{/web}}
+import 'package:{{name}}/core/hooks/analytics.dart';
+import 'package:{{name}}/features/onboarding/onboarding_screen.dart';
+import 'package:{{name}}/features/onboarding/onboarding_store.dart';
+import 'package:{{name}}/features/shell/app_shell.dart';
+import 'package:{{name}}/l10n/app_localizations.dart';
+
+import 'support/test_app.dart';
+
+void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+  final pages = onboardingPages(l10n);
+
+  test('there are two to four pages', () {
+    expect(pages.length, inInclusiveRange(2, 4));
+  });
+
+  testWidgets('a first launch shows onboarding instead of the app', (
+    tester,
+  ) async {
+    await pumpApp(tester, onboardingComplete: false);
+
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.text(pages.first.title), findsOneWidget);
+    expect(find.byType(AppShell), findsNothing);
+  });
+
+  testWidgets('a returning user goes straight to the app', (tester) async {
+    await pumpApp(tester, onboardingComplete: true);
+
+    expect(find.byType(OnboardingScreen), findsNothing);
+    expect(find.byType(AppShell), findsOneWidget);
+  });
+
+  testWidgets('Skip finishes onboarding and remembers it', (tester) async {
+    final store = _MemoryStore();
+    final analytics = _RecordingAnalytics();
+    await pumpApp(
+      tester,
+      onboardingComplete: false,
+      onboardingStore: store,
+      analytics: analytics,
+    );
+
+    await tester.tap(find.text(l10n.onboardingSkip));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OnboardingScreen), findsNothing);
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(store.complete, isTrue);
+    expect(analytics.events, ['onboarding_skipped']);
+  });
+
+  testWidgets('Next walks every page, and the last one finishes', (
+    tester,
+  ) async {
+    final store = _MemoryStore();
+    final analytics = _RecordingAnalytics();
+    await pumpApp(
+      tester,
+      onboardingComplete: false,
+      onboardingStore: store,
+      analytics: analytics,
+    );
+
+    for (final page in pages.skip(1)) {
+      await tester.tap(find.text(l10n.onboardingNext));
+      await tester.pumpAndSettle();
+      expect(find.text(page.title), findsOneWidget);
+    }
+    // Nothing left to skip on the last page.
+    expect(find.text(l10n.onboardingSkip), findsNothing);
+
+    await tester.tap(find.text(l10n.onboardingDone));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(store.complete, isTrue);
+    expect(analytics.events, ['onboarding_completed']);
+  });
+
+  testWidgets('Back returns to the previous page', (tester) async {
+    await pumpApp(tester, onboardingComplete: false);
+
+    expect(find.text(l10n.onboardingBack), findsNothing);
+    await tester.tap(find.text(l10n.onboardingNext));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.onboardingBack));
+    await tester.pumpAndSettle();
+
+    expect(find.text(pages.first.title), findsOneWidget);
+  });
+
+  group('MarkerFileOnboardingStore', () {
+    late Directory directory;
+
+    setUp(() => directory = Directory.systemTemp.createTempSync('onboarding'));
+    tearDown(() => directory.deleteSync(recursive: true));
+
+    test('is incomplete until marked, and stays complete', () async {
+      final store = MarkerFileOnboardingStore(directory: () async => directory);
+
+      expect(await store.isComplete(), isFalse);
+      await store.markComplete();
+      expect(await store.isComplete(), isTrue);
+
+      final marker = File(
+        '${directory.path}${Platform.pathSeparator}'
+        '${MarkerFileOnboardingStore.fileName}',
+      );
+      expect(marker.existsSync(), isTrue);
+      expect(
+        await MarkerFileOnboardingStore(directory: () async => directory)
+            .isComplete(),
+        isTrue,
+        reason: 'a fresh store, as after a restart, reads the same marker',
+      );
+    });
+  });
+{{#web}}
+
+  test('the web store keeps the flag in preferences', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = PreferencesOnboardingStore(
+      await SharedPreferences.getInstance(),
+    );
+
+    expect(await store.isComplete(), isFalse);
+    await store.markComplete();
+    expect(await store.isComplete(), isTrue);
+  });
+{{/web}}
+}
+
+class _MemoryStore implements OnboardingStore {
+  bool complete = false;
+
+  @override
+  Future<bool> isComplete() async => complete;
+
+  @override
+  Future<void> markComplete() async => complete = true;
+}
+
+class _RecordingAnalytics implements Analytics {
+  final events = <String>[];
+
+  @override
+  void logEvent(String name, {Map<String, Object> parameters = const {}}) =>
+      events.add(name);
+
+  @override
+  void logScreen(String name) {}
+}

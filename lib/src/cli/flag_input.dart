@@ -102,6 +102,10 @@ void addCreateFlags(ArgParser parser) {
           'Install debug and profile builds as <id>.dev, beside the store '
           'build rather than over it.',
     )
+    ..addFlag(
+      'onboarding',
+      help: 'A skippable welcome (2-4 screens) shown once on first launch.',
+    )
     // --- Tooling ---
     ..addFlag('fastlane', help: 'fastlane lanes for Play and the App Store.')
     ..addFlag('github-workflow', help: 'GitHub Actions release workflow.')
@@ -170,6 +174,7 @@ SpecInput readFlagInput(ArgResults results) {
     nepaliDates: flag('nepali-dates'),
     review: flag('review'),
     devSuffix: flag('dev-suffix'),
+    onboarding: flag('onboarding'),
     fastlane: flag('fastlane'),
     githubWorkflow: flag('github-workflow'),
     screenshots: flag('screenshots'),

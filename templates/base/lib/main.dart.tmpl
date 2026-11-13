@@ -21,6 +21,9 @@ import 'core/settings/settings_controller.dart';
 {{#sqflite}}
 import 'core/db/database.dart';
 {{/sqflite}}
+{{#onboarding}}
+import 'features/onboarding/onboarding_controller.dart';
+{{/onboarding}}
 
 void main() {
   // Before anything else, so a failure during startup itself is recorded
@@ -68,6 +71,12 @@ void main() {
     // your privacy policy before it belongs in your code.
 {{/appwrite}}
 
+    // Analytics and in-app feedback are seams with no-op defaults:
+    // nothing leaves the device until a real implementation is
+    // installed. Add `analyticsProvider.overrideWithValue(...)` or
+    // `userFeedbackProvider.overrideWithValue(...)` below; see
+    // core/hooks/.
+
     runApp(
       ProviderScope(
         // Built here rather than returned from bootstrap because Riverpod 3
@@ -81,6 +90,14 @@ void main() {
 {{#sqflite}}
           databaseProvider.overrideWithValue(bootstrap.database),
 {{/sqflite}}
+{{#onboarding}}
+          onboardingControllerProvider.overrideWith(
+            () => OnboardingController(
+              initialComplete: bootstrap.onboardingComplete,
+              store: bootstrap.onboardingStore,
+            ),
+          ),
+{{/onboarding}}
         ],
         child: const {{pascalName}}App(),
       ),

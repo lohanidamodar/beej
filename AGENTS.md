@@ -36,7 +36,7 @@ pipeline across every app. Do not improvise them: use the
 model and the three registries a generated app extends.
 
 **Gates.** `dart test` is seconds and covers the planner. `dart run
-tool/verify_matrix.dart` generates ten configurations and analyzes and tests
+tool/verify_matrix.dart` generates eleven configurations and analyzes and tests
 each, and is the real safety net: mutually exclusive bricks can never coexist
 in one project, so proving the *output* compiles is the only proof there is.
 Run it after any template or brick change.

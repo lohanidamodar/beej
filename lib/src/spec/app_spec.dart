@@ -46,6 +46,7 @@ class Features {
     this.nepaliDates = false,
     this.review = true,
     this.devSuffix = true,
+    this.onboarding = false,
   });
 
   /// Play Core flexible in-app update, plus the snackbar state machine.
@@ -66,6 +67,13 @@ class Features {
   /// different one means a build you are testing sits beside the copy
   /// installed from the store instead of replacing it. Release is untouched.
   final bool devSuffix;
+
+  /// A short, skippable welcome shown once on first launch.
+  ///
+  /// Off by default: most utility apps are better opened straight onto
+  /// their first screen, and an onboarding nobody asked for is the first
+  /// thing a user learns to skip.
+  final bool onboarding;
 }
 
 /// URLs and strings the About module renders.

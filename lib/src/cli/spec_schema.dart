@@ -137,6 +137,7 @@ String specJsonSchema() {
         "inAppUpdate": { "type": "boolean", "default": true, "description": "Play flexible in-app update. Android-only; no-ops elsewhere." },
         "notifications": { "type": "boolean", "default": false },
         "nepaliDates": { "type": "boolean", "default": false },
+        "onboarding": { "type": "boolean", "default": false, "description": "A skippable welcome of 2-4 screens, shown once on first launch. The seen flag is a file in the app data directory: the support directory on desktop." },
         "review": { "type": "boolean", "default": true }
       }
     },

@@ -1,0 +1,83 @@
+import 'dart:io' show Directory, File;
+
+{{#web}}
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
+
+{{/web}}
+import '../../core/storage/app_data_directory.dart';
+
+/// Remembers whether onboarding has been seen.
+///
+/// An interface so tests can swap in an in-memory store: widget tests have no
+/// file system plugin to back the real one.
+abstract interface class OnboardingStore {
+  Future<bool> isComplete();
+
+  Future<void> markComplete();
+}
+
+/// A marker file in [appDataDirectory]: the support directory on desktop
+/// (`%APPDATA%\<org>\<name>` on Windows), the app-private documents directory
+/// on Android and iOS.
+///
+/// A file rather than a preference so the flag sits with the rest of the
+/// app's data on desktop, and goes when that folder is cleared.
+class MarkerFileOnboardingStore implements OnboardingStore {
+  MarkerFileOnboardingStore({Future<Directory> Function()? directory})
+    : _directory = directory ?? appDataDirectory;
+
+  /// The marker's name inside the app data directory.
+  static const fileName = 'onboarding_complete';
+
+  final Future<Directory> Function() _directory;
+
+  Future<File> _marker() async {
+    final directory = await _directory();
+    return File('${directory.path}${_separator(directory.path)}$fileName');
+  }
+
+  @override
+  Future<bool> isComplete() async => (await _marker()).exists();
+
+  @override
+  Future<void> markComplete() async {
+    // The content is only for whoever opens the folder; existence is the flag.
+    await (await _marker()).writeAsString(
+      DateTime.now().toUtc().toIso8601String(),
+      flush: true,
+    );
+  }
+
+  /// Windows paths from path_provider use backslashes; everything else uses
+  /// forward slashes. Matching what is already there avoids a dependency on
+  /// `package:path` for one join.
+  static String _separator(String path) => path.contains(r'\') ? r'\' : '/';
+}
+{{#web}}
+
+/// The browser has no app data directory, so the web build keeps the flag in
+/// shared preferences (localStorage) instead.
+class PreferencesOnboardingStore implements OnboardingStore {
+  PreferencesOnboardingStore(this._preferences);
+
+  static const key = 'onboarding.complete';
+
+  final SharedPreferences _preferences;
+
+  @override
+  Future<bool> isComplete() async => _preferences.getBool(key) ?? false;
+
+  @override
+  Future<void> markComplete() => _preferences.setBool(key, true);
+}
+
+/// The store for the platform this build is running on.
+OnboardingStore defaultOnboardingStore(SharedPreferences preferences) =>
+    kIsWeb ? PreferencesOnboardingStore(preferences) : MarkerFileOnboardingStore();
+{{/web}}
+{{^web}}
+
+/// The store for the platform this build is running on.
+OnboardingStore defaultOnboardingStore() => MarkerFileOnboardingStore();
+{{/web}}

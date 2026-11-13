@@ -1,0 +1,239 @@
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:{{name}}/core/error/error_logger.dart';
+import 'package:{{name}}/core/router/routes.dart';
+import 'package:{{name}}/core/settings/app_settings.dart';
+import 'package:{{name}}/core/util/text_scale.dart';
+import 'package:{{name}}/features/settings/settings_screen.dart';
+import 'package:{{name}}/features/shell/app_shell.dart';
+{{#appwrite}}
+import 'package:{{name}}/features/auth/sign_in_screen.dart';
+{{/appwrite}}
+{{#onboarding}}
+import 'package:{{name}}/features/onboarding/onboarding_screen.dart';
+import 'package:{{name}}/l10n/app_localizations.dart';
+{{/onboarding}}
+
+import 'support/test_app.dart';
+
+/// The accessibility baseline every screen is held to.
+///
+/// - every tappable is at least 48×48 and has a label a screen reader can
+///   announce;
+/// - text clears WCAG AA contrast (4.5:1, 3:1 for large text) in the light
+///   *and* the dark theme;
+/// - every screen lays out at 200% text without overflowing;
+/// - on desktop, Tab walks the navigation before the content.
+///
+/// A new screen joins this by adding an entry to [screens]: how to reach it
+/// from a freshly started app.
+///
+/// Desktop-sized cases run as Windows, not as the test default (Android):
+/// Flutter shrinks hit areas and tightens density only on desktop
+/// platforms, so a phone platform at a desktop size would pass a theme
+/// that fails on a real desktop.
+void main() {
+  final phoneOnly = TargetPlatformVariant.only(TargetPlatform.android);
+  final desktopOnly = TargetPlatformVariant.only(TargetPlatform.windows);
+  final layouts = [
+    ('phone', tallPhone, phoneOnly),
+    ('desktop', desktop, desktopOnly),
+  ];
+  final screens = <String, Future<void> Function(WidgetTester)>{
+    'home': (_) async {},
+    'settings': openSettings,
+    'about': (tester) => openRoute(tester, Routes.about),
+    // With an error recorded, so the list and its share and clear actions
+    // are checked rather than the empty state alone.
+    'diagnostics': (tester) async {
+      ErrorLogger.instance.record(
+        StateError('example'),
+        StackTrace.current,
+        source: 'test',
+      );
+      await openRoute(tester, Routes.diagnostics);
+    },
+  };
+
+  tearDown(ErrorLogger.instance.clear);
+
+  Future<void> expectGuidelines(WidgetTester tester) async {
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+  }
+
+  for (final mode in [AppThemeMode.light, AppThemeMode.dark]) {
+    final settings = AppSettings(themeMode: mode);
+
+    group('${mode.id} theme', () {
+      for (final MapEntry(key: name, value: open) in screens.entries) {
+        for (final (label, size, platform) in layouts) {
+          testWidgets('$name meets the guidelines on a $label', (tester) async {
+            final semantics = tester.ensureSemantics();
+            await pumpApp(tester, size: size, settings: settings);
+            await open(tester);
+            await expectGuidelines(tester);
+            semantics.dispose();
+          }, variant: platform);
+        }
+      }
+{{#appwrite}}
+
+      testWidgets('sign-in meets the guidelines', (tester) async {
+        final semantics = tester.ensureSemantics();
+        await pumpApp(tester, size: tallPhone, settings: settings, signedIn: false);
+        expect(find.byType(SignInScreen), findsOneWidget);
+        await expectGuidelines(tester);
+        semantics.dispose();
+      });
+{{/appwrite}}
+{{#onboarding}}
+
+      testWidgets('every onboarding page meets the guidelines', (tester) async {
+        final semantics = tester.ensureSemantics();
+        await pumpApp(tester, settings: settings, onboardingComplete: false);
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(OnboardingScreen)),
+        );
+        final pages = onboardingPages(l10n);
+        for (var i = 0; i < pages.length; i++) {
+          await expectGuidelines(tester);
+          if (i < pages.length - 1) {
+            await tester.tap(find.text(l10n.onboardingNext));
+            await tester.pumpAndSettle();
+          }
+        }
+        semantics.dispose();
+      });
+{{/onboarding}}
+    });
+  }
+
+  group('at 200% text', () {
+    testWidgets('the device text scale reaches the app uncapped', (
+      tester,
+    ) async {
+      await pumpApp(tester, platformTextScale: 2.0);
+      final scaler = MediaQuery.textScalerOf(
+        tester.element(find.byType(AppShell)),
+      );
+      expect(scaler, isA<UserTextScaler>());
+      expect(scaler.scale(10), 20);
+    });
+
+    test('the in-app size multiplies the device size', () {
+      const scaler = UserTextScaler(
+        platform: TextScaler.linear(2.0),
+        factor: 1.3,
+      );
+      expect(scaler.scale(10), closeTo(26, 0.001));
+    });
+
+    for (final MapEntry(key: name, value: open) in screens.entries) {
+      for (final (label, _, platform) in layouts) {
+        // A normal-height phone here, not the tall one: overflow is about
+        // the space a real screen gives.
+        final size = label == 'phone' ? phone : desktop;
+        testWidgets('$name lays out on a $label', (tester) async {
+          await pumpApp(tester, size: size, platformTextScale: 2.0);
+          await open(tester);
+          // An overflow is reported as an exception, so a clean pump is the
+          // assertion.
+          expect(tester.takeException(), isNull);
+        }, variant: platform);
+      }
+    }
+{{#appwrite}}
+
+    testWidgets('sign-in lays out on a phone', (tester) async {
+      await pumpApp(tester, platformTextScale: 2.0, signedIn: false);
+      expect(tester.takeException(), isNull);
+    });
+{{/appwrite}}
+{{#onboarding}}
+
+    testWidgets('onboarding lays out on a phone', (tester) async {
+      await pumpApp(tester, platformTextScale: 2.0, onboardingComplete: false);
+      expect(find.byType(OnboardingScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+{{/onboarding}}
+  });
+
+  group('desktop focus order', () {
+    final navigation = find.byType({{#hasTabs}}NavigationRail{{/hasTabs}}{{#drawerOnly}}NavigationDrawer{{/drawerOnly}});
+    final content = find.byType(SettingsScreen);
+
+    testWidgets('Tab walks the navigation before the content', (tester) async {
+      await pumpApp(tester, size: desktop);
+      await openSettings(tester);
+      // Start from nothing focused, as a keyboard user arriving would.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      bool focusIn(Finder region) {
+        final focused = FocusManager.instance.primaryFocus?.context;
+        if (focused == null) return false;
+        return region.evaluate().any(
+          (element) =>
+              element == focused ||
+              find
+                  .descendant(
+                    of: find.byElementPredicate((e) => e == element),
+                    matching: find.byElementPredicate((e) => e == focused),
+                  )
+                  .evaluate()
+                  .isNotEmpty,
+        );
+      }
+
+      // One stop per destination: the tabs, then Settings.
+      const destinations = {{tabCount}} + 1;
+      for (var stop = 1; stop <= destinations; stop++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        expect(
+          focusIn(navigation),
+          isTrue,
+          reason: 'Tab $stop should still be in the navigation',
+        );
+      }
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(
+        focusIn(content),
+        isTrue,
+        reason: 'after the last destination, Tab moves into the content',
+      );
+    }, variant: desktopOnly);
+
+    // Reading order alone gets the walk above right only while nothing in
+    // the content sits level with the top of the navigation. Add a search
+    // field or a button row at the top of a screen and it interleaves the
+    // two, row by row. Separate traversal groups are what prevent that, so
+    // this checks they are there.
+    testWidgets('the navigation and the content are separate groups', (
+      tester,
+    ) async {
+      await pumpApp(tester, size: desktop);
+      await openSettings(tester);
+
+      Finder nearestGroup(Finder of) => find
+          .ancestor(of: of, matching: find.byType(FocusTraversalGroup))
+          .first;
+
+      expect(
+        find.descendant(of: nearestGroup(navigation), matching: content),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: nearestGroup(content), matching: navigation),
+        findsNothing,
+      );
+    }, variant: desktopOnly);
+  });
+}

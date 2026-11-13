@@ -4,6 +4,11 @@ import 'package:integration_test/integration_test.dart';
 {{#picons}}
 import 'package:picons/picons.dart';
 {{/picons}}
+{{^picons}}
+// For `Icons`, which the Settings tap below names when the app uses Material
+// icons.
+import 'package:material_ui/material_ui.dart';
+{{/picons}}
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:{{name}}/core/app.dart';
 import 'package:{{name}}/core/settings/app_settings.dart';

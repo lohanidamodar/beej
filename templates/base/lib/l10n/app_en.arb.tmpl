@@ -84,6 +84,29 @@
       "target": { "type": "String", "example": "https://example.com" }
     }
   },
+  "settingsFeedback": "Send feedback",
+  "settingsFeedbackSubtitle": "Tell us what works and what doesn't",
+<%#onboarding%>
+
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingBack": "Back",
+  "onboardingDone": "Get started",
+  "onboardingProgress": "Page {current} of {total}",
+  "@onboardingProgress": {
+    "description": "Read by screen readers for the page dots",
+    "placeholders": {
+      "current": { "type": "int", "example": "2" },
+      "total": { "type": "int", "example": "3" }
+    }
+  },
+  "onboardingWelcomeTitle": "Welcome to <%appName%>",
+  "onboardingWelcomeBody": "A quick look before you start. It takes a few seconds, and you can skip it.",
+  "onboardingPersonalizeTitle": "Make it yours",
+  "onboardingPersonalizeBody": "Choose an accent colour, a theme and a text size any time in Settings.",
+  "onboardingReadyTitle": "You're all set",
+  "onboardingReadyBody": "These pages are placeholders. Replace them with what a new user needs to know first.",
+<%/onboarding%>
 <%#inAppUpdate%>
 
   "updateReadyTitle": "Update downloaded",
@@ -110,6 +133,8 @@
   "authPasswordTooShort": "Passwords must be at least 8 characters",
   "authNameRequired": "Enter your name",
   "authRecoverySent": "Check your email for a reset link",
+  "authShowPassword": "Show password",
+  "authHidePassword": "Hide password",
 <%/appwrite%>
 
   "settingsDiagnostics": "Diagnostics",

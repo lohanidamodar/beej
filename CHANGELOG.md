@@ -1,5 +1,56 @@
 # Changelog
 
+## Unreleased
+
+### An accessibility baseline in every app
+
+Every generated app now starts accessible, and its test suite holds it there.
+`test/accessibility_test.dart` runs Flutter's `meetsGuideline` checks on every
+shipped screen, in both themes, at phone and desktop sizes:
+
+- **Labels.** Every tappable has a label. The password visibility toggles had
+  none, and the text-size segments read "A" four times; both are fixed.
+- **48dp targets.** The theme keeps full-size hit areas on desktop, where
+  Flutter shrinks them by default, and the accent swatches grew from 44 to 48.
+  The desktop cases run as Windows, so the shrinking is actually exercised.
+- **AA contrast in both themes.** The rendered screens are checked, and
+  `test/theme_contrast_test.dart` holds every accent to 4.5:1 in light and
+  dark. That test found two defects in popup_bits_design, which the
+  `designSystem: popup_bits_design` theme now corrects locally until the
+  package fixes them. Text on filled buttons was always white, about 2:1 on
+  dark mode's light accents, because the package's luminance check still
+  reads `Color.r/g/b` as 0–255. Its danger colour was 3.5:1 on the light
+  surface.
+- **200% text.** The device text size was capped at 160%; it is now passed
+  through uncapped and multiplied by the in-app size. Every screen is tested at
+  200%. A drawer-only app on a wide window widens its inline drawer with the
+  text, and switches to the modal drawer once it would crowd the content.
+- **Desktop focus order.** The navigation and the content are separate focus
+  traversal groups, so Tab finishes the navigation before entering the
+  content.
+
+### Optional onboarding
+
+`features.onboarding: true` (`--onboarding`) adds a skippable welcome of three
+placeholder pages, shown once on first launch. It sits above the router, so it
+works with either router and comes before sign-in. Whether it has been seen is
+a marker file in `appDataDirectory()`: the support directory on desktop, the
+app-private documents directory on mobile, and shared preferences on the web.
+`appDataDirectory()` now ships with sqflite or onboarding, whichever asks.
+
+### Seams for analytics and feedback
+
+`lib/core/hooks/` has an `Analytics` and a `UserFeedback` interface, each with
+a no-op default behind a provider. Nothing leaves the device, and no feedback
+row appears in Settings, until a real implementation is installed with a
+provider override.
+
+### Fixed
+
+- The screenshot integration test failed to analyze in apps using Material
+  icons: it named `Icons` without importing `material_ui`. No matrix case
+  combined Material icons with screenshots until now.
+
 ## 1.3.0
 
 ### Updated for Flutter 3.50 / Dart 3.14

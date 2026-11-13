@@ -28,6 +28,13 @@ class ShellDestination {
 /// from every destination — a nested Scaffold would capture the hamburger and
 /// find no drawer on it.
 ///
+/// Each navigation surface and the content area is its own
+/// [FocusTraversalGroup], so Tab finishes the navigation before it enters the
+/// content. Without them, Tab follows reading order, row by row across the
+/// whole window, and once a screen has something focusable level with the
+/// top of the navigation (a search field, a row of filters) it alternates
+/// between the two.
+///
 /// Destinations live in an [IndexedStack], so each keeps its scroll position
 /// and state when you switch away and back.
 class AppShell extends StatefulWidget {
@@ -63,12 +70,22 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final destinations = _destinations(context);
     final useRail = context.useRail;
+{{#drawerOnly}}
+    // Inline once there is room for it, modal behind the hamburger otherwise.
+    // The drawer widens with the text size so a label still fits at 200%, and
+    // a wide window whose text is that large gets the modal drawer rather
+    // than one that crowds out the content.
+    final drawerWidth = MediaQuery.textScalerOf(
+      context,
+    ).scale(_inlineDrawerWidth);
+    final inlineDrawer = useRail && drawerWidth <= context.screenWidth / 3;
+{{/drawerOnly}}
 
     return Scaffold(
       appBar: AppBar(title: Text(destinations[_index].label)),
 {{#hasDrawer}}
       // Modal on a phone; the wide layout below shows it inline instead.
-      drawer: useRail ? null : _AppDrawer(
+      drawer: {{#drawerOnly}}inlineDrawer{{/drawerOnly}}{{^drawerOnly}}useRail{{/drawerOnly}} ? null : _AppDrawer(
         destinations: destinations,
         selectedIndex: _index,
         onSelected: (i) {
@@ -81,58 +98,73 @@ class _AppShellState extends State<AppShell> {
         children: [
 {{#hasTabs}}
           if (useRail) ...[
-            NavigationRail(
-              selectedIndex: _index,
-              onDestinationSelected: _go,
-              labelType: context.isExpanded
-                  ? NavigationRailLabelType.none
-                  : NavigationRailLabelType.all,
-              extended: context.isExpanded,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationRailDestination(
-                    icon: Icon(destination.icon),
-                    label: Text(destination.label),
-                  ),
-              ],
+            FocusTraversalGroup(
+              child: NavigationRail(
+                selectedIndex: _index,
+                onDestinationSelected: _go,
+                labelType: context.isExpanded
+                    ? NavigationRailLabelType.none
+                    : NavigationRailLabelType.all,
+                extended: context.isExpanded,
+                destinations: [
+                  for (final destination in destinations)
+                    NavigationRailDestination(
+                      icon: Icon(destination.icon),
+                      label: Text(destination.label),
+                    ),
+                ],
+              ),
             ),
             const VerticalDivider(width: 1),
           ],
 {{/hasTabs}}
 {{#drawerOnly}}
-          if (useRail) ...[
+          if (inlineDrawer) ...[
             SizedBox(
-              width: 280,
-              child: _AppDrawer(
-                destinations: destinations,
-                selectedIndex: _index,
-                onSelected: _go,
+              width: drawerWidth,
+              child: FocusTraversalGroup(
+                child: _AppDrawer(
+                  destinations: destinations,
+                  selectedIndex: _index,
+                  onSelected: _go,
+                ),
               ),
             ),
             const VerticalDivider(width: 1),
           ],
 {{/drawerOnly}}
-          Expanded(child: IndexedStack(index: _index, children: _screens)),
+          Expanded(
+            child: FocusTraversalGroup(
+              child: IndexedStack(index: _index, children: _screens),
+            ),
+          ),
         ],
       ),
 {{#hasTabs}}
       bottomNavigationBar: useRail
           ? null
-          : NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: _go,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationDestination(
-                    icon: Icon(destination.icon),
-                    label: destination.label,
-                  ),
-              ],
+          : FocusTraversalGroup(
+              child: NavigationBar(
+                selectedIndex: _index,
+                onDestinationSelected: _go,
+                destinations: [
+                  for (final destination in destinations)
+                    NavigationDestination(
+                      icon: Icon(destination.icon),
+                      label: destination.label,
+                    ),
+                ],
+              ),
             ),
 {{/hasTabs}}
     );
   }
 }
+{{#drawerOnly}}
+
+/// The inline drawer's width at the default text size.
+const double _inlineDrawerWidth = 280;
+{{/drawerOnly}}
 {{#hasDrawer}}
 
 class _AppDrawer extends StatelessWidget {

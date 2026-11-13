@@ -1,0 +1,42 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Where product analytics go.
+///
+/// A seam, not an integration: the app records a few events through this
+/// interface, and nothing leaves the device until a real implementation is
+/// installed. To connect a package, implement this interface over it and
+/// override [analyticsProvider] in `main.dart`:
+///
+/// ```dart
+/// analyticsProvider.overrideWithValue(MyAnalytics(...)),
+/// ```
+///
+/// Sending usage data off the device is a privacy decision. Put it in the
+/// privacy policy, and in the store's data-safety answers, before it goes in
+/// the code.
+abstract interface class Analytics {
+  /// Something happened. [name] is snake_case and stable: dashboards key off
+  /// it, so renaming an event breaks every chart that reads it.
+  ///
+  /// Keep [parameters] free of anything that identifies a person: no names,
+  /// emails or free text a user typed.
+  void logEvent(String name, {Map<String, Object> parameters = const {}});
+
+  /// A screen was shown. [name] is the route path or a stable screen id.
+  void logScreen(String name);
+}
+
+/// Records nothing. The default until a real implementation is installed.
+class NoopAnalytics implements Analytics {
+  const NoopAnalytics();
+
+  @override
+  void logEvent(String name, {Map<String, Object> parameters = const {}}) {}
+
+  @override
+  void logScreen(String name) {}
+}
+
+/// The installed [Analytics]. Read it with `ref.read`; an event is a fire-and-
+/// forget call, never something a widget rebuilds on.
+final analyticsProvider = Provider<Analytics>((ref) => const NoopAnalytics());

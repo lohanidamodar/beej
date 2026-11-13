@@ -105,6 +105,7 @@ lib/
     bootstrap.dart           ordered async init  ← REGISTRY
     config/app_config.dart   compile-time config and --dart-define overrides
     error/                   error capture, the on-device log
+    hooks/                   analytics + feedback seams, no-op until wired
     router/
       routes.dart            every path constant  ← REGISTRY
       navigation.dart        context.goTo / pushTo / back
@@ -112,7 +113,10 @@ lib/
     settings/                AppSettings model + persisted controller
     theme/                   tokens, accent palette, ThemeData, font bridge
     ui/                      shared widgets: views, async_view, feedback
-    util/                    responsive, launcher
+    util/                    responsive, launcher, text scale
+{{#hasAppData}}
+    storage/                 appDataDirectory(): where app files live
+{{/hasAppData}}
 {{#sqflite}}
     db/                      database + numbered migrations
 {{/sqflite}}
@@ -122,6 +126,9 @@ lib/
   l10n/                      app_en.arb, app_ne.arb, generated output
   features/
     <feature>/               one folder per feature
+{{#onboarding}}
+    onboarding/              first-launch welcome, shown once
+{{/onboarding}}
     settings/
       tiles.dart             settings rows  ← REGISTRY
       diagnostics_screen.dart  the captured error log
@@ -157,7 +164,7 @@ code. That is what lets two features be added without touching the same lines.
 - Handle loading, error and empty states. `core/ui/` has `AsyncView`,
   `EmptyView`, `ErrorView` so you do not rewrite them per screen.
 
-## 7. Responsive layout
+## 7. Responsive layout and accessibility
 
 One codebase adapts by **width**, never by operating system. Platform checks
 are for platform capabilities only.
@@ -179,6 +186,35 @@ are for platform capabilities only.
 **Proof obligation:** any new or meaningfully changed screen is checked at a
 phone width *and* a desktop width. When the adaptive behaviour matters, the
 widget test covers both.
+### The accessibility baseline
+
+Every screen meets these, and `test/accessibility_test.dart` checks each one
+the app ships with, in the light and the dark theme, at phone and desktop
+sizes:
+
+- **Labels.** Anything tappable has a label a screen reader can announce. An
+  `IconButton` gets a `tooltip`; a custom control gets `Semantics(label:)`; a
+  decorative icon gets `ExcludeSemantics`. A `Text` whose glyphs say nothing
+  on their own (a lone "A") gets a `semanticsLabel`.
+- **48dp targets.** `Sizes.minTouchTarget` in `core/theme/tokens.dart`. The
+  theme keeps the full hit area on desktop too, where Flutter would otherwise
+  shrink it. Something may *look* smaller; its hit area may not.
+- **AA contrast in both themes.** Text colours come from the colour scheme,
+  never a raw `Color`, and `test/theme_contrast_test.dart` holds every accent
+  to 4.5:1 in both themes. A colour you add for text gets a line there.
+- **200% text.** The device text size is never capped: at 200% the app
+  renders at 200%, times the in-app size (`core/util/text_scale.dart`). Lay
+  out for it: scroll instead of fixing a height, and let a row of buttons
+  wrap (`OverflowBar`, `Wrap`) instead of overflowing.
+- **Desktop focus order.** Tab finishes the navigation before it enters the
+  content, because each is its own `FocusTraversalGroup`. Give a region with
+  its own internal order (a toolbar, a form beside a list) a group of its own
+  too.
+
+A new screen joins the checks by adding an entry to `screens` in
+`test/accessibility_test.dart` saying how to reach it. Do that for every
+screen you add: the guidelines catch an unlabelled button or a 40dp target the
+moment it lands.
 
 ## 8. Testing
 
@@ -194,6 +230,17 @@ widget test covers both.
   purpose: it exists to fail loudly when startup breaks.
 - `test/error_logger_test.dart` — deduplication, the size cap, and surviving a
   corrupt stored log.
+ `test/accessibility_test.dart` — the baseline in §7, on every screen.
+- `test/theme_contrast_test.dart` — AA contrast for every accent, both themes.
+- `test/hooks_test.dart` — the analytics and feedback seams stay no-ops until
+  something is installed.
+{{#onboarding}}
+- `test/onboarding_test.dart` — shown once, skippable from every page, and
+  remembered.
+{{/onboarding}}
+- `test/support/test_app.dart` — `pumpApp` runs the real app with test
+  overrides. Use it rather than building a `ProviderScope` by hand, so a new
+  provider that needs overriding is added in one place.
 
 `.github/workflows/ci.yml` runs `flutter analyze` and `flutter test` on every
 push and pull request. That is what makes the guarantees above binding rather
@@ -390,6 +437,30 @@ Add the key to `lib/l10n/app_en.arb` **and** `lib/l10n/app_ne.arb`, then rebuild
 Migrations run in order on open, each applied at most once. `flutter test`
 proves they apply — run it.
 {{/sqflite}}
+### Connect analytics or in-app feedback
+
+`core/hooks/analytics.dart` and `core/hooks/user_feedback.dart` are interfaces
+with no-op defaults: nothing leaves the device, and no feedback row appears in
+Settings, until a real implementation is installed.
+
+1. Implement `Analytics` or `UserFeedback` over the package
+2. Override `analyticsProvider` or `userFeedbackProvider` in `main.dart`
+3. Update the privacy policy and the stores' data-safety answers before
+   shipping it: usage data leaving the device is a disclosure, not a detail
+
+Settings shows "Send feedback" by itself once `isAvailable` is true.
+{{#onboarding}}
+
+### Change the onboarding
+
+The pages are `onboardingPages()` in
+`features/onboarding/onboarding_screen.dart`, with their strings in the ARB
+files. Keep it to two, three or four; the test holds that. Whether it has been
+seen is a marker file in `appDataDirectory()`: the support directory on
+desktop, the app-private documents directory on mobile{{#web}}, and shared
+preferences on the web{{/web}}. Delete `onboarding_complete` there to see it
+again.
+{{/onboarding}}
 {{#fastlane}}
 
 ### Release
@@ -546,6 +617,8 @@ ecosystem fills in.
 - [ ] **Ran on a device or emulator and exercised the change** — or said plainly
       that you could not, and what is unverified as a result
 - [ ] Changed screens checked at compact *and* expanded widths
+- [ ] New screens added to `test/accessibility_test.dart`: labelled, 48dp
+      targets, AA contrast in both themes, laid out at 200% text
 - [ ] Loading, error and empty states handled
 - [ ] New strings in **both** `.arb` files
 - [ ] No `package:flutter/material.dart` import

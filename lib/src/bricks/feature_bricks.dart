@@ -3,6 +3,81 @@ import '../spec/app_spec.dart';
 import 'brick.dart';
 import 'versions.dart';
 
+/// Where the app keeps its own files: `appDataDirectory()`.
+///
+/// Its own brick because more than one feature needs it, and two bricks may
+/// not both write the same file. The documents directory on Android and iOS,
+/// the support directory on desktop, never the user's Documents folder.
+class AppDataStorageBrick extends Brick {
+  const AppDataStorageBrick();
+
+  @override
+  String get id => 'app_data_storage';
+
+  @override
+  String get summary =>
+      'appDataDirectory(): app-private on mobile, the support dir on desktop';
+
+  @override
+  bool appliesTo(AppSpec spec) => spec.usesSqflite || spec.features.onboarding;
+
+  @override
+  List<TemplateFile> files(AppSpec spec) => const [
+    TemplateFile(
+      'storage/app_data_directory.dart.tmpl',
+      'lib/core/storage/app_data_directory.dart',
+    ),
+    TemplateFile(
+      'storage/app_data_directory_test.dart.tmpl',
+      'test/app_data_directory_test.dart',
+    ),
+  ];
+
+  @override
+  List<PubDep> dependencies(AppSpec spec) => [
+    PubDep.hosted('path_provider', Versions.pathProvider),
+  ];
+}
+
+/// A skippable welcome of a few pages, shown once on first launch.
+class OnboardingBrick extends Brick {
+  const OnboardingBrick();
+
+  @override
+  String get id => 'onboarding';
+
+  @override
+  String get summary =>
+      'skippable first-launch onboarding, seen-flag in the app data dir';
+
+  @override
+  bool appliesTo(AppSpec spec) => spec.features.onboarding;
+
+  @override
+  List<TemplateFile> files(AppSpec spec) => const [
+    TemplateFile(
+      'onboarding/onboarding_store.dart.tmpl',
+      'lib/features/onboarding/onboarding_store.dart',
+    ),
+    TemplateFile(
+      'onboarding/onboarding_controller.dart.tmpl',
+      'lib/features/onboarding/onboarding_controller.dart',
+    ),
+    TemplateFile(
+      'onboarding/onboarding_gate.dart.tmpl',
+      'lib/features/onboarding/onboarding_gate.dart',
+    ),
+    TemplateFile(
+      'onboarding/onboarding_screen.dart.tmpl',
+      'lib/features/onboarding/onboarding_screen.dart',
+    ),
+    TemplateFile(
+      'onboarding/onboarding_test.dart.tmpl',
+      'test/onboarding_test.dart',
+    ),
+  ];
+}
+
 /// Phosphor icons via `picons`.
 ///
 /// No files of its own — the icon expressions are already baked into the

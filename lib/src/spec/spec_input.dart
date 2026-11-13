@@ -31,6 +31,7 @@ class SpecInput {
     this.nepaliDates,
     this.review,
     this.devSuffix,
+    this.onboarding,
     this.privacyPolicyUrl,
     this.moreAppsUrl,
     this.supportEmail,
@@ -69,6 +70,7 @@ class SpecInput {
   final bool? nepaliDates;
   final bool? review;
   final bool? devSuffix;
+  final bool? onboarding;
   final String? privacyPolicyUrl;
   final String? moreAppsUrl;
   final String? supportEmail;
@@ -120,6 +122,7 @@ class SpecInput {
     nepaliDates: other.nepaliDates ?? nepaliDates,
     review: other.review ?? review,
     devSuffix: other.devSuffix ?? devSuffix,
+    onboarding: other.onboarding ?? onboarding,
     privacyPolicyUrl: other.privacyPolicyUrl ?? privacyPolicyUrl,
     moreAppsUrl: other.moreAppsUrl ?? moreAppsUrl,
     supportEmail: other.supportEmail ?? supportEmail,
@@ -174,6 +177,7 @@ abstract final class SpecDefaults {
   static const nepaliDates = false;
   static const review = true;
   static const devSuffix = true;
+  static const onboarding = false;
   static const fastlane = true;
   static const githubWorkflow = true;
   static const screenshots = true;
@@ -230,6 +234,7 @@ AppSpec resolveSpec(SpecInput input, {required int year}) {
       nepaliDates: input.nepaliDates ?? SpecDefaults.nepaliDates,
       review: input.review ?? SpecDefaults.review,
       devSuffix: input.devSuffix ?? SpecDefaults.devSuffix,
+      onboarding: input.onboarding ?? SpecDefaults.onboarding,
     ),
     about: AboutConfig(
       privacyPolicyUrl: input.privacyPolicyUrl,

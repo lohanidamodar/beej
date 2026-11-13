@@ -50,8 +50,11 @@ class TextScaleTile extends ConsumerWidget {
               for (final step in textScaleSteps)
                 ButtonSegment(
                   value: step,
+                  // Every segment shows the same letter, so a screen reader
+                  // needs the name instead or it reads "A" four times.
                   label: Text(
                     'A',
+                    semanticsLabel: labelFor(step),
                     style: TextStyle(fontSize: 13 * step),
                   ),
                   tooltip: labelFor(step),

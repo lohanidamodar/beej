@@ -97,6 +97,8 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     ],
 
     'sqflite': spec.usesSqflite,
+    // Whether lib/core/storage/app_data_directory.dart is generated.
+    'hasAppData': spec.usesSqflite || spec.features.onboarding,
     'hasDatabase': spec.database != DatabaseKind.none,
 
     'picons': spec.usesPicons,
@@ -112,6 +114,7 @@ Map<String, dynamic> buildContext(AppSpec spec) {
     'nepaliDates': spec.features.nepaliDates,
     'review': spec.features.review,
     'devSuffix': spec.features.devSuffix,
+    'onboarding': spec.features.onboarding,
     'devIdSuffix': devIdSuffix,
     // The launcher label for builds that are not the store build. The
     // unsuffixed one is `appName`.
@@ -206,6 +209,21 @@ Map<String, dynamic> buildContext(AppSpec spec) {
       spec,
       picons: 'bug',
       material: 'bug_report_outlined',
+    ),
+    'iconFeedback': _chrome(
+      spec,
+      picons: 'chatText',
+      material: 'feedback_outlined',
+    ),
+    'iconOnboardingWelcome': _chrome(
+      spec,
+      picons: 'handWaving',
+      material: 'waving_hand_outlined',
+    ),
+    'iconOnboardingReady': _chrome(
+      spec,
+      picons: 'checkCircle',
+      material: 'check_circle_outline',
     ),
     'iconSignOut': _chrome(
       spec,

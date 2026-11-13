@@ -1,0 +1,55 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:{{name}}/core/hooks/analytics.dart';
+import 'package:{{name}}/core/hooks/user_feedback.dart';
+import 'package:{{name}}/l10n/app_localizations.dart';
+
+import 'support/test_app.dart';
+
+/// The analytics and feedback seams: no-op until a package is installed, and
+/// wired to the app once one is.
+void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
+  test('both seams default to no-ops', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(analyticsProvider), isA<NoopAnalytics>());
+    expect(container.read(userFeedbackProvider), isA<NoopUserFeedback>());
+    expect(container.read(userFeedbackProvider).isAvailable, isFalse);
+  });
+
+  testWidgets('Settings shows no feedback row while there is no channel', (
+    tester,
+  ) async {
+    await pumpApp(tester, size: tallPhone);
+    await openSettings(tester);
+
+    expect(find.text(l10n.settingsFeedback), findsNothing);
+  });
+
+  testWidgets('an installed feedback channel gets a Settings row', (
+    tester,
+  ) async {
+    final feedback = _RecordingFeedback();
+    await pumpApp(tester, size: tallPhone, userFeedback: feedback);
+    await openSettings(tester);
+
+    await tester.tap(find.text(l10n.settingsFeedback));
+    await tester.pumpAndSettle();
+
+    expect(feedback.requests, 1);
+  });
+}
+
+class _RecordingFeedback implements UserFeedback {
+  int requests = 0;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<void> request(BuildContext context) async => requests++;
+}

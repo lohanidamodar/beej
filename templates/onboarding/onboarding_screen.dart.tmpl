@@ -1,0 +1,250 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+{{#picons}}
+import 'package:picons/picons.dart';
+{{/picons}}
+
+import '../../core/hooks/analytics.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/util/responsive.dart';
+import '../../l10n/app_localizations.dart';
+import 'onboarding_controller.dart';
+
+/// One onboarding page.
+@immutable
+class OnboardingPage {
+  const OnboardingPage({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+}
+
+/// The pages, in order. Keep it to two, three or four.
+///
+/// Every page past the second loses readers. If something needs more room
+/// than four short pages, it belongs in the app, at the moment it is useful,
+/// not in front of it. `test/onboarding_test.dart` holds the count.
+List<OnboardingPage> onboardingPages(AppLocalizations l10n) => [
+  OnboardingPage(
+    icon: {{iconOnboardingWelcome}},
+    title: l10n.onboardingWelcomeTitle,
+    body: l10n.onboardingWelcomeBody,
+  ),
+  OnboardingPage(
+    icon: {{iconAccent}},
+    title: l10n.onboardingPersonalizeTitle,
+    body: l10n.onboardingPersonalizeBody,
+  ),
+  OnboardingPage(
+    icon: {{iconOnboardingReady}},
+    title: l10n.onboardingReadyTitle,
+    body: l10n.onboardingReadyBody,
+  ),
+];
+
+/// A short welcome, shown once on first launch. Every page can be skipped.
+class OnboardingScreen extends ConsumerStatefulWidget {
+  const OnboardingScreen({super.key});
+
+  @override
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  final _controller = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int index) {
+    // Reduced motion (the platform's "remove animations" setting) jumps
+    // rather than slides.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.jumpToPage(index);
+    } else {
+      _controller.animateToPage(
+        index,
+        duration: Motion.normal,
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _finish({required bool skipped}) {
+    ref
+        .read(analyticsProvider)
+        .logEvent(
+          skipped ? 'onboarding_skipped' : 'onboarding_completed',
+          parameters: {'page': _index + 1},
+        );
+    ref.read(onboardingControllerProvider.notifier).complete();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final pages = onboardingPages(l10n);
+    final isFirst = _index == 0;
+    final isLast = _index == pages.length - 1;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Skip sits first in reading and focus order, so it is the
+            // first thing a screen reader or the Tab key reaches.
+            Padding(
+              padding: const EdgeInsets.all(Spacing.sm),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: isLast
+                    ? const SizedBox(height: Sizes.minTouchTarget)
+                    : TextButton(
+                        onPressed: () => _finish(skipped: true),
+                        child: Text(l10n.onboardingSkip),
+                      ),
+              ),
+            ),
+            Expanded(
+              child: PageView(
+                controller: _controller,
+                onPageChanged: (index) => setState(() => _index = index),
+                children: [for (final page in pages) _PageBody(page: page)],
+              ),
+            ),
+            _PageIndicator(index: _index, count: pages.length),
+            Padding(
+              padding: const EdgeInsets.all(Spacing.lg),
+              // Wraps the buttons onto two lines rather than overflowing
+              // when the text is large.
+              child: OverflowBar(
+                alignment: MainAxisAlignment.end,
+                overflowAlignment: OverflowBarAlignment.end,
+                spacing: Spacing.sm,
+                overflowSpacing: Spacing.sm,
+                children: [
+                  if (!isFirst)
+                    TextButton(
+                      onPressed: () => _goTo(_index - 1),
+                      child: Text(l10n.onboardingBack),
+                    ),
+                  FilledButton(
+                    autofocus: true,
+                    onPressed: isLast
+                        ? () => _finish(skipped: false)
+                        : () => _goTo(_index + 1),
+                    child: Text(
+                      isLast ? l10n.onboardingDone : l10n.onboardingNext,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PageBody extends StatelessWidget {
+  const _PageBody({required this.page});
+
+  final OnboardingPage page;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Scrolls rather than overflows: at 200% text a page can be taller than
+    // the space a phone gives it.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: ContentWidth(
+              maxWidth: Breakpoints.maxMessageWidth,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Decorative: the title says what the page is about.
+                  ExcludeSemantics(
+                    child: Icon(
+                      page.icon,
+                      size: 72,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xl),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      page.title,
+                      style: theme.textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.md),
+                  Text(
+                    page.body,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dots for sight, "Page 2 of 3" for a screen reader.
+class _PageIndicator extends StatelessWidget {
+  const _PageIndicator({required this.index, required this.count});
+
+  final int index;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      // Announced as the page changes, since a swipe gives no other cue.
+      liveRegion: true,
+      label: AppLocalizations.of(context).onboardingProgress(index + 1, count),
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < count; i++)
+              AnimatedContainer(
+                duration: Motion.fast,
+                margin: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+                width: i == index ? Spacing.xl : Spacing.sm,
+                height: Spacing.sm,
+                decoration: BoxDecoration(
+                  color: i == index ? scheme.primary : scheme.outline,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

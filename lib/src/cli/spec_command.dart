@@ -94,6 +94,7 @@ features:
   review: true
   devSuffix: true               # debug/profile install as <id>.dev, beside
                                 # the store build rather than over it
+  onboarding: false             # skippable welcome, shown once
 
 # Every About value is optional — a tile is generated only when its value is
 # set, because a row linking nowhere is worse than an absent row. These are

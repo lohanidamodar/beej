@@ -22,7 +22,16 @@ abstract final class AppTheme {
       brightness: brightness,
     );
 
-    final base = ThemeData(brightness: brightness, colorScheme: colorScheme);
+    final base = ThemeData(
+      brightness: brightness,
+      colorScheme: colorScheme,
+      // Flutter shrinks hit areas and tightens density on desktop by default,
+      // which takes buttons and icon buttons below 48. A mouse is precise,
+      // but a touchscreen laptop, a trackpad with a tremor and a switch user
+      // are not, so the same 48 applies everywhere.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.standard,
+    );
 
     return base.copyWith(
       // See google_fonts_text_theme.dart for why this is not
@@ -61,7 +70,7 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 48),
+          minimumSize: const Size(0, Sizes.minTouchTarget),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Radii.sm),
           ),
@@ -69,7 +78,7 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 48),
+          minimumSize: const Size(0, Sizes.minTouchTarget),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Radii.sm),
           ),

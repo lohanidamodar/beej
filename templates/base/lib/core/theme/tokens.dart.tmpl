@@ -28,6 +28,14 @@ abstract final class Spacing {
   static const double fabClearance = 96;
 }
 
+abstract final class Sizes {
+  /// The smallest thing a finger or a pointer should have to hit, on every
+  /// platform: Android's 48dp, which also covers Apple's 44pt. A control may
+  /// *look* smaller; its hit area may not. `test/accessibility_test.dart`
+  /// checks every tappable on the generated screens against it.
+  static const double minTouchTarget = 48;
+}
+
 abstract final class Radii {
   static const double xs = 8;
   static const double sm = 12;

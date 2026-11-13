@@ -4,7 +4,11 @@ import 'package:material_ui/material_ui.dart';
 import 'router/router.dart';
 import 'settings/settings_controller.dart';
 import 'theme/app_theme.dart';
+import 'util/text_scale.dart';
 import '../l10n/app_localizations.dart';
+{{#onboarding}}
+import '../features/onboarding/onboarding_gate.dart';
+{{/onboarding}}
 {{#inAppUpdate}}
 import 'update/update_listener.dart';
 {{/inAppUpdate}}
@@ -47,7 +51,16 @@ class {{pascalName}}App extends ConsumerWidget {
         // it stays necessary for exactly as long as our dependencies keep
         // importing frozen Material. Drop it once they no longer do.
         // ignore: deprecated_member_use
-        final bridged = MaterialUiCompatibilityBridge(child: child!);
+        final bridged = MaterialUiCompatibilityBridge(
+{{#onboarding}}
+          // Inside the bridge and the text scale, so the welcome
+          // gets the same theme and text size as the app.
+          child: OnboardingGate(child: child!),
+{{/onboarding}}
+{{^onboarding}}
+          child: child!,
+{{/onboarding}}
+        );
 {{#inAppUpdate}}
         final wrapped = UpdateListener(child: bridged);
 {{/inAppUpdate}}
@@ -55,14 +68,14 @@ class {{pascalName}}App extends ConsumerWidget {
         final wrapped = bridged;
 {{/inAppUpdate}}
         // The user's text-size preference multiplies the platform scale
-        // rather than replacing it, so device accessibility settings still
-        // apply on top.
+        // rather than replacing it, and the platform scale is never capped:
+        // a device set to 200% gets 200%. See core/util/text_scale.dart.
         final media = MediaQuery.of(context);
         return MediaQuery(
           data: media.copyWith(
-            textScaler: media.textScaler.clamp(
-              minScaleFactor: settings.textScale,
-              maxScaleFactor: settings.textScale * 1.6,
+            textScaler: UserTextScaler(
+              platform: media.textScaler,
+              factor: settings.textScale,
             ),
           ),
           child: wrapped,

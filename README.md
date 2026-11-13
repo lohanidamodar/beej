@@ -52,6 +52,16 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
   Release is untouched, and so is everything that names the store build: the
   Gradle `namespace`, `AppConfig.androidApplicationId`, the `market://` rate
   link and fastlane's `APP_IDENTIFIER`. Off with `--no-dev-suffix`.
+- **An accessibility baseline, tested.** Every tappable is labelled and at
+  least 48dp, on desktop too; text clears WCAG AA contrast in both themes
+  for every accent; the device text size is honoured uncapped and every
+  screen lays out at 200%; and on desktop, Tab finishes the navigation
+  before it enters the content. `test/accessibility_test.dart` runs
+  `meetsGuideline` on each shipped screen, and a new screen joins it with
+  one line.
+- **Seams for analytics and feedback.** `Analytics` and `UserFeedback`
+  interfaces with no-op defaults in `lib/core/hooks/`. Nothing leaves the
+  device until you install an implementation with a provider override.
 - **Responsive helpers**, shared UI (`AsyncView`, `EmptyView`, `ErrorView`,
   `SectionLabel`, `context.toast`, `context.confirm`), and a `Launcher` for
   every hand-off to another app.
@@ -105,6 +115,7 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 | `features.inAppUpdate` | bool | true |
 | `features.notifications` | bool | false |
 | `features.nepaliDates` | bool | false |
+| `features.onboarding` | bool | false |
 | `features.review` | bool | true |
 | `tooling.fastlane` | bool | true |
 | `tooling.githubWorkflow` | bool | true |
@@ -114,9 +125,13 @@ beej create tipot --yes --dry-run       # show the plan, write nothing
 
 `beej bricks` lists what each contributes.
 
+**Onboarding.** `features.onboarding: true` adds a skippable welcome of
+two to four pages (three placeholders to start), shown once on first
+launch, before sign-in.
+
 **Where app data lives.** `database: sqflite` stores its file through
 `appDataDirectory()` in `lib/core/storage/app_data_directory.dart`, and
-anything else the app keeps for itself — caches, settings files, a Hive box —
+the onboarding seen-flag, and anything else the app keeps for itself — caches, settings files, a Hive box —
 belongs there too. On Android and iOS that is the app-private documents
 directory. On desktop it is the support directory (`%APPDATA%\<org>\<name>`
 on Windows, from the runner's company and product names), never `getApplicationDocumentsDirectory()`, which on desktop is
@@ -218,7 +233,7 @@ the two above instead.
 
 ```sh
 dart test                            # beej's own tests — seconds
-dart run tool/verify_matrix.dart     # generate 10 configs, analyze + test each
+dart run tool/verify_matrix.dart     # generate 11 configs, analyze + test each
 dart run tool/verify_matrix.dart minimal --keep
 dart run tool/embed_templates.dart   # after editing anything under templates/
 ```

@@ -22,11 +22,62 @@ abstract final class AppTheme {
   static ThemeData dark(AccentOption accent) => _build(accent, Brightness.dark);
 
   static ThemeData _build(AccentOption accent, Brightness brightness) {
-    return PopupBitsTheme.build(
+    final theme = PopupBitsTheme.build(
       archetype: archetype,
       product: _productFor(accent, brightness),
       brightness: brightness,
     );
+    return theme.copyWith(
+      colorScheme: _readable(theme.colorScheme, brightness),
+      // The app's accessibility baseline, over whatever the design system
+      // chose: Flutter shrinks hit areas and tightens density on desktop by
+      // default, which takes buttons below the 48 every platform gets here.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.standard,
+    );
+  }
+
+  /// Corrects two colours popup_bits_design gets wrong, so text on them
+  /// clears WCAG AA (4.5:1) as `test/theme_contrast_test.dart` requires.
+  ///
+  /// - `onPrimary`: the package's luminance check reads `Color.r/g/b` as
+  ///   0–255, but they have been 0–1 since Flutter's wide-gamut `Color`, so it
+  ///   always picks white — about 2:1 on the light accents dark mode uses.
+  /// - `error`: `PbTokens.danger` is 3.5:1 on the light surface.
+  ///
+  /// Both belong upstream. Once the package fixes one, its line here is a
+  /// no-op and can go; the contrast test says whether it still holds.
+  static ColorScheme _readable(ColorScheme scheme, Brightness brightness) {
+    return scheme.copyWith(
+      onPrimary: _contrast(PbTokens.n900, scheme.primary) >
+              _contrast(Colors.white, scheme.primary)
+          ? PbTokens.n900
+          : Colors.white,
+      error: _readableOn(scheme.error, scheme.surface, brightness),
+    );
+  }
+
+  /// [color], darkened (light theme) or lightened (dark theme) just enough
+  /// to read as text on [background]. Unchanged if it already does.
+  static Color _readableOn(
+    Color color,
+    Color background,
+    Brightness brightness,
+  ) {
+    var hsl = HSLColor.fromColor(color);
+    final step = brightness == Brightness.light ? -0.02 : 0.02;
+    while (_contrast(hsl.toColor(), background) < 4.5 &&
+        hsl.lightness + step >= 0 &&
+        hsl.lightness + step <= 1) {
+      hsl = hsl.withLightness(hsl.lightness + step);
+    }
+    return hsl.toColor();
+  }
+
+  static double _contrast(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
   }
 
   /// Turn the chosen accent into the triplet the design system expects.
